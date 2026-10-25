@@ -6,7 +6,7 @@
 
 | ข้อกำหนด | หลักฐานตรวจได้ | สถานะ/ข้อจำกัด |
 |---|---|---|
-| อย่างน้อย 3 endpoints รวม GET และ mutation | `frontend/app.js`: `loadRecipes` → GET `/api/v1/recipes`; `loadDetail` → GET `/api/v1/recipes/:id`; `recipe-form` submit → POST `/api/v1/recipes`; เพิ่มเติม GET categories/ingredients, POST auth/login/ratings | implementation + API/tests + live reads; authenticated browser write E2E ยังไม่ได้รัน |
+| อย่างน้อย 3 endpoints รวม GET และ mutation | `frontend/app.js`: `loadRecipes` → GET `/api/v1/recipes`; `loadDetail` → GET `/api/v1/recipes/:id`; `recipe-form` submit → POST `/api/v1/recipes`; เพิ่มเติม GET categories/ingredients, POST auth/login/ratings | implementation + API/tests + live reads; isolated Firefox/MariaDB browser E2E ผ่าน 13 checkpoints ดู `docs/browser-e2e/report.json`; ไม่ใช่ production stack หรือการซ้อมผู้พรี |
 | เหมาะกับผู้ใช้ อ่านง่าย loading/error ชัด | `frontend/index.html`, `frontend/styles.css`; `app.js` status/errorMessage, aria-busy, disabled controls, try/catch/finally | browser read-only/guest responsive checks มีหลักฐานใน docs/frontend-verification.md; ไม่ใช่ full accessibility audit |
 | ฟอร์มและ frontend validation | `frontend/index.html` required/min/max; `app.js` recipe-form, readIngredientRows, rating-form; `src/index.js` ตรวจที่ server | API/VM regression ครอบคลุมหลายกรณี; server เป็นผู้ตัดสิน ไม่พึ่ง client validation อย่างเดียว |
 
@@ -17,7 +17,7 @@
 | Requirement ≥5 use cases / resources | `requirement.md` UC-01–UC-06 | 6 use cases; ระบบ recipes ตาม Pno 4 |
 | ERD, ≥3 related tables, seed ≥3/table, DB constraints | `erd.png`, `schema.sql`, `seed.sql`; FK/UNIQUE/CHECK/CASCADE | 6 ตารางธุรกิจ; MariaDB integration ผ่าน ไม่ใช่ exact MySQL 8 |
 | mysql2 pool + actual query | `src/db.js` createPool, `src/index.js` recipes/healthz | มี SQL และ isolated MariaDB evidence; reviewer ตรวจ Railway live config ว่า source image `mysql:8` ไม่มี staged changes พร้อม live health200/API rows. เป็นหลักฐาน configured deployed MySQL8 integration ไม่ใช่ SELECT VERSION หรือ full constraint/write E2E บน production; mock suite แยกจากฐานจริง |
-| Authentication/authorization | `src/password.js`; `src/index.js` authenticate/recipeWriter/ownsRecipe และ POST auth/login | JWT+scrypt+role/ownership; มี API/DB tests ไม่ใช่ browser write E2E |
+| Authentication/authorization | `src/password.js`; `src/index.js` authenticate/recipeWriter/ownsRecipe และ POST auth/login | JWT+scrypt+role/ownership; API/DB tests และ isolated browser login/guest/member/owner guards ผ่านตาม `docs/browser-e2e/report.json`; ไม่รับรองทุก authorization branch หรือ production write E2E |
 | Migration ถูกต้อง | `tools/migrate.js`, `migrations/`, docs/mariadb-integration-results.json | up/up/down/up รักษาข้อมูลเดิมในฐานแยก; ไม่ใช่ production restore drill |
 | OpenAPI ตรงโค้ด ≥6 endpoints | `openapi.yaml`, `test/openapi.test.js`, `src/index.js` routes | 12 method/path operations; Swagger GET Execute live 200; ไม่ตีความ parameters เป็น method |
 | Swagger และ Postman ตัวอย่างจริงครบ endpoint | `/api-docs/reference/`, `postman_collection.json`, `docs/postman-operation-coverage.json` | 16 observed examples ครบ 12 operations; JWT redacted; localhost external fixture ไม่ใช่ live upstream; ไม่ครบทุก error permutation |

@@ -1,0 +1,235 @@
+{
+  "completed": true,
+  "browser": "Playwright Firefox 153.0 build1538; default security settings, fresh writable HOME/XDG",
+  "database": "fresh isolated MariaDB; not exact MySQL 8",
+  "scope": "loopback-only, context blocks non-local requests, no production requests",
+  "checks": [
+    {
+      "name": "fresh isolated real MariaDB seeded",
+      "result": "PASS",
+      "detail": "11.8.6-MariaDB-0+deb13u1 from Debian; not MySQL 8"
+    },
+    {
+      "name": "default Firefox real frontend loads; non-local requests blocked",
+      "result": "PASS"
+    },
+    {
+      "name": "guest create guard",
+      "result": "PASS"
+    },
+    {
+      "name": "wrong fixture password gives visible 401 error",
+      "result": "PASS"
+    },
+    {
+      "name": "chef login and required-name validation",
+      "result": "PASS"
+    },
+    {
+      "name": "chef creates recipe with two ingredients and real DB/API readback",
+      "result": "PASS"
+    },
+    {
+      "name": "member create guard",
+      "result": "PASS"
+    },
+    {
+      "name": "member login, owner controls hidden, review persisted and average refreshed",
+      "result": "PASS"
+    },
+    {
+      "name": "duplicate review shows API 409 error",
+      "result": "PASS"
+    },
+    {
+      "name": "delete exact-name safety validation",
+      "result": "PASS"
+    },
+    {
+      "name": "chef deletes recipe; GET 404 and original DB rows restored including ingredient/review cascades",
+      "result": "PASS"
+    },
+    {
+      "name": "reload clears in-memory login session",
+      "result": "PASS"
+    },
+    {
+      "name": "no uncaught frontend errors",
+      "result": "PASS"
+    }
+  ],
+  "events": [
+    {
+      "method": "GET",
+      "path": "/api/v1/categories",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ingredients",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/recipes",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/4",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/4/ratings",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/4",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/4/ratings",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/4",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/4/ratings",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/recipes/4/ratings",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/4",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/4/ratings",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/recipes/4/ratings",
+      "status": 409
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/4/ratings",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes/4",
+      "status": 200
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/recipes/4",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/categories",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/recipes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ingredients",
+      "status": 200
+    }
+  ],
+  "errors": [],
+  "cleanup": "browser, Express, connections, MariaDB stopped; disposable workspace removed",
+  "completedAt": "2026-10-25T06:42:41Z",
+  "metadataFinalizedAt": "2026-10-25T06:42:53Z",
+  "source": {
+    "localCommit": "5f034e45a2378ab4181ec184f4ed205595140339",
+    "committedTree": "1e4ff46520811ab6326c3c1f8581ea023f235435",
+    "remoteCommitAsVerifiedByParent": "fed4b12b6c7c1b43511b9c3e21a8d8f37ca042d0",
+    "note": "Working tree has pre-existing guide JPG updates and untracked documentation; no runtime JS/HTML modifications were made by this test."
+  },
+  "sourceHashes": {
+    "src/index.js": "6f946d8e8766d4be32fdfd3218801e13b27dc02dd5c245ba3899836b5588335b",
+    "src/db.js": "b9498e2ff67edc7782e77ae2fbd416b576d809b92b6636a0bd043160c5302030",
+    "src/password.js": "3523855b3702db1fb055edecfc3f90618d1e67a3b45e684d8c2c0596d068a2f3",
+    "frontend/index.html": "4758d0380ccaa2fe619b63d7c4e7acaebf9b87863a66f7cdef3887c2c5db1dba",
+    "frontend/app.js": "b5f7cd1ee70a8a5260d184f3fca6ad0e1b81e0df5371615edb62fde6e815a410",
+    "schema.sql": "94601579ac79fa44635b987332f2834dd3f4bfaebfb593fbc544ccdc398fb6b0",
+    "seed.sql": "4bfe1a03eccc74306c1dac23baafd5e96eb9e5f3b9dbfd84f39315d0a47a9e57",
+    "tools/migrate.js": "45ded472f4a5c41337e9357e68df9f5a0a0fea7bcbda33d556daf489b5f71f34"
+  },
+  "screenshots": {
+    "01-created-with-ingredients.png": "27d6b72b79857efb5acb121828890abc124b372b71d27fe998b65716ec552afe",
+    "02-member-review-duplicate.png": "8e3d5cb2eec3641d4bcb3f8d282033951d1c735f4084ba95f0b0473f62c41e5f",
+    "03-deleted-clean-readback.png": "530a6f799da15d8507d23d91a2154a17eb957e9da8aae36eed3bdf3161de0c06"
+  },
+  "executedHarness": "/tmp/krua-browser-e2e.cjs",
+  "preservedHarness": "isolated-browser-e2e.cjs",
+  "harnessSha256": "f1f5e84684a95099043f0aa781cfb7b688c588c2785c9a0e0e9b09b5fb2d3a41",
+  "harnessSecrets": "No literal passwords, JWTs, cookies or production credentials; fixture password and JWT secret generated in memory and not logged.",
+  "runtime": {
+    "browser": "Firefox 153.0",
+    "playwrightBrowserBuild": "1538",
+    "database": "11.8.6-MariaDB-0+deb13u1 from Debian",
+    "exactProductionStack": false,
+    "browserSecurity": "Default Firefox launch options; only writable HOME/XDG locations configured; no sandbox disabling",
+    "provenance": "Playwright official install firefox, built-in Microsoft download fallback"
+  },
+  "readback": {
+    "recipeAfterDeleteHttpStatus": 404,
+    "databaseComparison": "Deep equal to before test for recipes, recipe_ingredients and ratings; recipe and cascading children absent",
+    "source": "Explicit same-process GET and SQL assertions in preserved harness (not browser response events)"
+  }
+}

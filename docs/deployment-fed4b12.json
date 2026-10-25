@@ -1,0 +1,78 @@
+{
+  "runtimeCommit": "fed4b12b6c7c1b43511b9c3e21a8d8f37ca042d0",
+  "runtimeTree": "1e4ff46520811ab6326c3c1f8581ea023f235435",
+  "observationWindowUTC": "2026-10-25 06:11\u201306:12 UTC",
+  "timestampScope": "Historical actual observation window supplied by release reviewer; not a fresh probe at artifact creation.",
+  "railway": {
+    "deploymentId": "72579769-df15-4093-8891-f417da0a6f59",
+    "status": "SUCCESS",
+    "updatedAt": "2026-10-25T06:10:46.851Z",
+    "provenance": "Release reviewer verified connected tool output."
+  },
+  "httpProbes": [
+    {
+      "route": "/",
+      "status": 200,
+      "matchesSource": true
+    },
+    {
+      "route": "/api-docs/",
+      "status": 200,
+      "matchesSource": true
+    },
+    {
+      "route": "/api-guide.css",
+      "status": 200,
+      "matchesSource": true
+    },
+    {
+      "route": "/api-docs/start/",
+      "status": 200,
+      "finalUrl": "https://krua-web-production.up.railway.app/api-docs/"
+    },
+    {
+      "route": "/api-start.html",
+      "status": 200,
+      "finalUrl": "https://krua-web-production.up.railway.app/api-docs/"
+    },
+    {
+      "route": "/healthz",
+      "status": 200,
+      "finalUrl": "https://krua-web-production.up.railway.app/healthz"
+    },
+    {
+      "route": "/api/v1/recipes",
+      "status": 200,
+      "finalUrl": "https://krua-web-production.up.railway.app/api/v1/recipes"
+    },
+    {
+      "route": "/api-docs/reference/",
+      "status": 200,
+      "finalUrl": "https://krua-web-production.up.railway.app/api-docs/reference/"
+    }
+  ],
+  "browserObservations": {
+    "reference": [
+      {
+        "viewportWidth": 320,
+        "scrollWidth": 311
+      },
+      {
+        "viewportWidth": 1440,
+        "scrollWidth": 1421
+      }
+    ],
+    "mainNavigation": {
+      "viewportWidth": 320,
+      "scrollWidth": 311
+    },
+    "scope": "Actual desktop Chromium window/zoom observations by release reviewer; no touch hardware claim or production writes."
+  },
+  "repositoryEvidence": "Release reviewer fetched root coverage-report.md, clo-requirements-checklist.md and postman_collection.json from remote main successfully.",
+  "limits": [
+    "Three matchesSource observations are from original probe report; no hashes invented here.",
+    "Old walkthrough URLs record final redirected URL and HTTP200, not an unrecorded redirect status.",
+    "Runtime release verification does not imply subsequent documentation-only edits are deployed.",
+    "Isolated Firefox/MariaDB write E2E is separate evidence in docs/browser-e2e/."
+  ]
+}

@@ -1,8 +1,10 @@
 # Release readiness, 25 October 2026
 
-## Current teacher-aligned candidate — not yet deployed
+## Verified teacher-aligned runtime and separate browser E2E
 
-The new candidate replaces the four-step companion app with one static project-evidence page at `/api-docs/`. Demo happens in the normal application: authenticate as chef, create a recipe with ingredients, validate, save and view the automatically opened detail. Old walkthrough URLs redirect to the evidence page. No manual ID entry, duplicate app flow or four-stage guide remains in this candidate. Root evidence includes coverage-report.md, clo-requirements-checklist.md, erd.png and observed postman_collection.json. Deployment and browser QA of this candidate must be recorded separately from the passing aggregate tests below; the preceding release checks below do not establish acceptance of this new design.
+The teacher-aligned runtime `fed4b12b6c7c1b43511b9c3e21a8d8f37ca042d0`, tree `1e4ff46520811ab6326c3c1f8581ea023f235435`, was verified with Railway SUCCESS (updated 2026-10-25T06:10:46.851Z) and public read-only probes observed around 06:11–06:12 UTC. See `docs/deployment-fed4b12.json`: eight HTTP200 results, three exact source matches, old walkthrough URLs ending at `/api-docs/`, health/recipes/Swagger, plus desktop Chromium width checks. This does not claim later evidence-only edits are deployed. Isolated Firefox/MariaDB authenticated write E2E is recorded separately below.
+
+The new candidate replaces the four-step companion app with one static project-evidence page at `/api-docs/`. Demo happens in the normal application: authenticate as chef, create a recipe with ingredients, validate, save and view the automatically opened detail. Old walkthrough URLs redirect to the evidence page. No manual ID entry, duplicate app flow or four-stage guide remains in this candidate. Root evidence includes coverage-report.md, clo-requirements-checklist.md, erd.png and observed postman_collection.json. The previous-release history below is not a substitute for the teacher-aligned runtime and isolated E2E evidence above.
 
 ## Previous verified release and recovery
 
@@ -25,9 +27,9 @@ Actual cloud browser review covered home/detail/login/guest-create and the four-
 
 ## Remaining release gates
 
-1. Deploy and test the teacher-aligned candidate before claiming it live. Historical final refinement verified: zero old login screenshot links; Swagger computed/rendered font is IBM Plex Sans Thai; expanded GET at width 320 has scrollWidth 311 and no overflow. Deployment/asset checks are recorded above.
+1. Teacher-aligned runtime deployment/read-only QA and isolated write E2E are verified within their separate scopes above. Historical previous-release refinement: zero old login screenshot links; Swagger computed/rendered font is IBM Plex Sans Thai; expanded GET at width 320 has scrollWidth 311 and no overflow. Deployment/asset checks are recorded above.
 2. Finish source packaging and select only `*-viewport.png` from `krua-evidence/redesign-fcac037`. Exclude cropped full-page captures taken at non-100% zoom. Earlier e89f2c5 evidence is historical and may be omitted from the final package.
-3. Authenticated browser write E2E remains blocked by isolated-preview network refusal. Do not substitute production writes or claim the API/database tests cover rendered browser behavior.
+3. Authenticated browser write E2E now passes 13 checkpoints on isolated default Playwright Firefox 153.0, fresh MariaDB 11.8.6 and local Express; see [browser report](browser-e2e/SUMMARY.md) and [machine evidence](browser-e2e/report.json). No production requests/writes; this is not production Chromium/MySQL 8 validation or the presenter’s own rehearsal. Browser, Express, connections and MariaDB stopped; disposable workspace removed. Presenter rehearsal remains required.
 4. The actual PPTX is prepared and verified as nine slides, five main plus four hidden supporting slides, with notes. Final screenshot/source packaging is separate from PPTX readiness.
 5. Preserve exact MySQL 8, touch-device, full accessibility/performance and load/penetration-test limitations in the handover.
 

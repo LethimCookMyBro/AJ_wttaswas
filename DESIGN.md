@@ -35,10 +35,16 @@ The live reference review covered Apple iPhone comparison (aligned recipe facts)
 
 ## Verification status
 
-The teacher-aligned reference-page candidate is not yet deployed or browser-verified. The four-stage guide checks below are historical evidence of the previous release, not acceptance of the new candidate.
+The teacher-aligned runtime fed4b12/tree1e4ff465 is verified by historical Railway SUCCESS/public and desktop Chromium observations in docs/deployment-fed4b12.json. Separate isolated Firefox/MariaDB write E2E now passes13checkpoints. The four-stage guide checks below remain previous-release history; later evidence-only edits are not automatically deployed.
 
 Runtime release `3ebf76ed9a5b5f15f76c6e9a99e6695b1f26fa4a` is confirmed on remote main with Railway SUCCESS. That historical revision passed 212 tests in 14 suites. The new teacher-aligned candidate passes 184 tests in 13 suites and ten VM UI scenarios; measured coverage is statements93.34%, branches85.79%, functions98.47%, lines94.21% (docs/test-run-summary.json). These checks are not rendered browser write tests.
 
 Actual cloud browser review covered home/detail/guest-create/login and all four guide stages, live ingredient/review reads, stale readback clearing, empty-search reset and Swagger GET Execute 200. Main/guide were measured at 320, 390, 768, 1280 and 1440 CSS pixels using desktop resizing and zoom; expanded Swagger did not widen 320/390 layouts. This is not touch-device testing or a complete animation/accessibility audit.
 
 Final live refinement retest passed: zero old login screenshot links; Swagger uses IBM Plex Sans Thai in computed style and the actual screenshot, and expanded GET at width 320 measures scrollWidth 311 without overflow. Deployment evidence in docs/deployment-3ebf76e.json records nine exact asset matches, eight HTTP 200 public probes, health OK and mysql storage. Final screenshots select only *-viewport.png from krua-evidence/redesign-fcac037; cropped non-100%-zoom full-page captures are excluded. Final source/screenshot packaging is separate. Authenticated browser write E2E was not run because the isolated local preview was refused by the browser network; production was never mutated. Prior MariaDB integration covers the unchanged backend separately, not exact MySQL 8. See docs/frontend-verification.md for scope and limits.
+
+## Isolated browser E2E — 25 October 2026
+
+ผ่าน authenticated browser write E2E แบบแยกข้อมูล 13 checkpoints ด้วย default Playwright Firefox 153.0 + MariaDB 11.8.6 + local Express; ดู docs/browser-e2e/SUMMARY.md และ report.json. ไม่ใช่ production Chromium/MySQL 8 หรือการซ้อมของผู้พรีจริง ไม่มี production writes
+
+หลักฐานตรวจ wrong-password401, guest/member guards, chef create2ingredients+decimal readback, member review201/average refresh, duplicate409, typed-name deletion, GET404 และ recipes/recipe_ingredients/ratings กลับตรงข้อมูลก่อนทดสอบ, reload logout และ frontend uncaught errors0. เก็บ source/harness/screenshot SHA256 และ cleanup ใน report.json. ข้อความ “ยังไม่ได้รัน” ในบันทึก release เดิมข้างต้นเป็นประวัติก่อนรอบนี้ ไม่ใช่สถานะปัจจุบัน.

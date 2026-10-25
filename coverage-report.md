@@ -28,7 +28,7 @@ Snapshot coverage: [docs/backend-coverage-summary.json](docs/backend-coverage-su
 - [MariaDB integration](docs/mariadb-integration-results.json): 14 checkpoint groups ผ่านบน disposable MariaDB 11.8.6 รวม schema/seed, migration, role/ownership, atomic commit/rollback/concurrency และ constraints. ไม่ใช่ exact MySQL 8.
 - [Postman collection](postman_collection.json): 16 observed examples ครบ 12 OpenAPI method/path operations; 15 ตัวอย่างเดิมกับ isolated MariaDB และ localhost external fixture, เพิ่ม GET system แบบ read-only บน isolated DB. ไม่ใช่ทุก error/status permutation.
 - [Failure scenarios](failure-scenario-results.md): S1–S8 ผ่าน แต่ live TheMealDB S0 degraded/fallback; ไม่รายงาน all-green.
-- [Browser scope](docs/frontend-verification.md): desktop responsive/read-only/guest checks; authenticated browser write E2E ยังไม่ได้รันเพราะ browser network เข้า isolated preview ไม่ได้. ไม่เขียน production เพื่อแทนการทดสอบ.
+- [Isolated browser E2E](docs/browser-e2e/SUMMARY.md): ผ่าน authenticated browser write E2E แบบแยกข้อมูล 13 checkpoints ด้วย default Playwright Firefox 153.0 + MariaDB 11.8.6 + local Express; ดู docs/browser-e2e/SUMMARY.md และ report.json. ไม่ใช่ production Chromium/MySQL 8 หรือการซ้อมของผู้พรีจริง ไม่มี production writes Jest coverage/184 tests และ VM10 ไม่รวม 13 browser checkpoints นี้.
 
 ## รันซ้ำ
 

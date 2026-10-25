@@ -1,8 +1,10 @@
 # Frontend verification, 25 October 2026
 
-## Current teacher-aligned candidate — not yet deployed
+## Verified teacher-aligned runtime and separate browser E2E
 
-The new candidate replaces the four-step companion app with one static project-evidence page at `/api-docs/`. Demo happens in the normal application: authenticate as chef, create a recipe with ingredients, validate, save and view the automatically opened detail. Old walkthrough URLs redirect to the evidence page. No manual ID entry, duplicate app flow or four-stage guide remains in this candidate. Root evidence includes coverage-report.md, clo-requirements-checklist.md, erd.png and observed postman_collection.json. Deployment and browser QA of this candidate must be recorded separately from the passing aggregate tests below; the preceding release checks below do not establish acceptance of this new design.
+The teacher-aligned runtime `fed4b12b6c7c1b43511b9c3e21a8d8f37ca042d0`, tree `1e4ff46520811ab6326c3c1f8581ea023f235435`, was verified with Railway SUCCESS (updated 2026-10-25T06:10:46.851Z) and public read-only probes observed around 06:11–06:12 UTC. See `docs/deployment-fed4b12.json`: eight HTTP200 results, three exact source matches, old walkthrough URLs ending at `/api-docs/`, health/recipes/Swagger, plus desktop Chromium width checks. This does not claim later evidence-only edits are deployed. Isolated Firefox/MariaDB authenticated write E2E is recorded separately below.
+
+The new candidate replaces the four-step companion app with one static project-evidence page at `/api-docs/`. Demo happens in the normal application: authenticate as chef, create a recipe with ingredients, validate, save and view the automatically opened detail. Old walkthrough URLs redirect to the evidence page. No manual ID entry, duplicate app flow or four-stage guide remains in this candidate. Root evidence includes coverage-report.md, clo-requirements-checklist.md, erd.png and observed postman_collection.json. The previous-release history below is not a substitute for the teacher-aligned runtime and isolated E2E evidence above.
 
 ## Previous verified release: 3ebf76e (historical implementation)
 
@@ -39,6 +41,12 @@ These are desktop responsive checks, not mobile hardware or touch tests. Do not 
 ## Remaining limits and candidate acceptance gates
 
 - Previous-release affected-view retest passed: old login screenshot link count is zero; Swagger computed font and rendered screenshot show IBM Plex Sans Thai. Expanded GET at 320 CSS pixels measured scrollWidth 311, without overflow; the preceding Execute check returned HTTP 200.
-- Authenticated browser write E2E was **not executed**: the isolated local preview was refused by the browser network. API/database mutation tests are separate evidence. No production data was changed to fill this gap.
+- Authenticated browser write E2E now passes 13 checkpoints on isolated default Playwright Firefox 153.0, fresh MariaDB 11.8.6 and local Express; see [browser report](browser-e2e/SUMMARY.md) and [machine evidence](browser-e2e/report.json). No production requests/writes; this is not production Chromium/MySQL 8 validation or the presenter’s own rehearsal. The previous cloud-browser preview refusal remains historical; the new isolated same-invocation route closes only that scoped test gap.
 - Exact MySQL 8, touch hardware, full accessibility and load/penetration testing remain unverified.
 - Final source/screenshot packaging remains a separate handover step; do not declare the whole project complete from test counts alone.
+
+## Isolated browser evidence, completed 2026-10-25T06:42:41Z
+
+Authenticated browser write E2E now passes 13 checkpoints on isolated default Playwright Firefox 153.0, fresh MariaDB 11.8.6 and local Express; see [browser report](browser-e2e/SUMMARY.md) and [machine evidence](browser-e2e/report.json). No production requests/writes; this is not production Chromium/MySQL 8 validation or the presenter’s own rehearsal.
+
+The report records source local commit `5f034e45a2378ab4181ec184f4ed205595140339`, tree `1e4ff46520811ab6326c3c1f8581ea023f235435`, source hashes and parent-verified remote `fed4b12b6c7c1b43511b9c3e21a8d8f37ca042d0`. It covers wrong-password401, guest/member guards, chef creation with two ingredients and decimal SQL/API readback, member review201 and refreshed average, duplicate409, exact-name delete safety, delete200/GET404 and restoration of the three affected tables, reload logout, and zero uncaught frontend errors. Non-local browser requests were blocked. The harness uses default browser security; no sandbox disabling. Source code was not changed for this run. This is separate from historical production read-only responsive checks and from Jest/VM counts.

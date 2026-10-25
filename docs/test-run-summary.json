@@ -69,5 +69,23 @@
     "Prior isolated MariaDB11.8.6 integration14groups separate; not rerun by npm run coverage.",
     "Prior212tests14suites belonged to removed four-step guide revision;184tests13suites is current candidate, not failing/deleted evidence.",
     "Configured Railway mysql:8/health/public reads do not establish exact patch version or full production constraints/write testing."
-  ]
+  ],
+  "additionalBrowserEvidence": {
+    "completedAt": "2026-10-25T06:42:41Z",
+    "report": "docs/browser-e2e/report.json",
+    "summary": "docs/browser-e2e/SUMMARY.md",
+    "executedHarness": "docs/browser-e2e/isolated-browser-e2e.cjs",
+    "checkpointsPassed": 13,
+    "result": "PASS",
+    "browser": "default Playwright Firefox 153.0 build 1538",
+    "database": "fresh isolated MariaDB 11.8.6",
+    "scope": "local Express; non-local browser requests blocked; no production requests; not production Chromium/MySQL8 or presenter rehearsal; separate from Jest184/13 and VM10",
+    "source": {
+      "localCommit": "5f034e45a2378ab4181ec184f4ed205595140339",
+      "committedTree": "1e4ff46520811ab6326c3c1f8581ea023f235435",
+      "remoteCommitAsVerifiedByParent": "fed4b12b6c7c1b43511b9c3e21a8d8f37ca042d0",
+      "note": "Working tree has pre-existing guide JPG updates and untracked documentation; no runtime JS/HTML modifications were made by this test."
+    },
+    "cleanup": "browser, Express, connections, MariaDB stopped; disposable workspace removed"
+  }
 }
