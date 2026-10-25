@@ -32,7 +32,7 @@ describe("Visual API overview and separate tutorial", () => {
     expect(response.status).toBe(200);
     expect(response.text).toContain('data-guide-page="start"');
     expect(response.text).toContain('href="/api-docs/"');
-    expect(response.text).toContain('/assets/guide-login.jpg');
+    expect(response.text).not.toMatch(/guide-(?:login|home|recipe)\.(?:jpg|png|webp)/);
     expect(response.text).toContain('id="created-recipe-id"');
     expect(response.text).toContain("ข้อมูลจริง");
     expect(response.text).toContain('src="/api-guide.js" defer');
@@ -154,4 +154,24 @@ test('Swagger narrow response tables are locally contained rather than hiding pa
   expect(css.text).toMatch(/\.swagger-ui \.responses-table\{[^}]*table-layout:fixed/);
   expect(css.text).toMatch(/\.response-col_links\{[^}]*width:58px/);
   expect(css.text).not.toMatch(/(?:html|body)\s*\{[^}]*overflow-x:hidden/);
+});
+
+test('presentation pages use the live app rather than stale UI screenshots', async () => {
+  for (const url of ['/api-docs/', '/api-docs/start/']) {
+    const response = await request(app).get(url).expect(200);
+    expect(response.text).not.toMatch(/guide-(?:login|home|recipe)\.(?:jpg|png|webp)/);
+    expect(response.text).toContain('/assets/api-flow.svg');
+  }
+  expect((await request(app).get('/api-docs/start/')).text).toContain('id="create-app-link" href="/#create"');
+});
+test('Swagger reference has self-contained Thai fonts without depending on product CSS', async () => {
+  const page = await request(app).get('/api-docs/reference/').expect(200);
+  expect(page.text).toContain('/api-guide.css');
+  const css = (await request(app).get('/api-guide.css').expect(200)).text;
+  for (const weight of [400, 500, 600]) {
+    expect(css).toContain(`@font-face{font-family:'IBM Plex Sans Thai';src:url('/assets/ibm-plex-sans-thai-${weight}.ttf')`);
+    await request(app).get(`/assets/ibm-plex-sans-thai-${weight}.ttf`).expect(200);
+  }
+  expect(css).toMatch(/\.swagger-ui,\.swagger-ui \*\{font-family:'IBM Plex Sans Thai',Tahoma,sans-serif!important\}/);
+  expect(css).toMatch(/\.swagger-ui code \*\{font-family:ui-monospace/);
 });

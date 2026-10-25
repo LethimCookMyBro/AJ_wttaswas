@@ -1,3 +1,9 @@
+@font-face{font-family:'IBM Plex Sans Thai';src:url('/assets/ibm-plex-sans-thai-400.ttf') format('truetype');font-weight:400;font-display:swap}
+@font-face{font-family:'IBM Plex Sans Thai';src:url('/assets/ibm-plex-sans-thai-500.ttf') format('truetype');font-weight:500;font-display:swap}
+@font-face{font-family:'IBM Plex Sans Thai';src:url('/assets/ibm-plex-sans-thai-600.ttf') format('truetype');font-weight:600;font-display:swap}
+/* Swagger loads this stylesheet independently of the product stylesheet. */
+.swagger-ui,.swagger-ui *{font-family:'IBM Plex Sans Thai',Tahoma,sans-serif!important}
+.swagger-ui pre,.swagger-ui code,.swagger-ui pre *,.swagger-ui code *{font-family:ui-monospace,SFMono-Regular,Consolas,monospace!important}
 /* Presentation mode: a single task and a single result at a time. */
 .guide-page{font-family:'IBM Plex Sans Thai',Tahoma,sans-serif;font-size:18px;line-height:1.65;font-weight:400;background:var(--paper);color:var(--ink)}
 .guide-page h1,.guide-page h2,.guide-page h3,.guide-page strong{font-weight:600;letter-spacing:0}
