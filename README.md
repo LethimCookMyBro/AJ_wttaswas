@@ -3,8 +3,8 @@
 เว็บสูตรอาหารสำหรับโครงงานวิชา 88736065 API for Back-End Development รหัสนิสิต 67160003 ใช้ Express, MySQL และ HTML/CSS/JavaScript เป็น modular monolith ไม่ใช่ microservices ที่แยก deploy แล้ว
 
 - [เว็บไซต์](https://krua-web-production.up.railway.app/)
-- [ภาพรวมการทำงาน](https://krua-web-production.up.railway.app/api-docs/)
-- [คู่มือทดลอง API](https://krua-web-production.up.railway.app/api-docs/start/)
+- [เริ่มนำเสนอโปรเจกต์](https://krua-web-production.up.railway.app/api-docs/)
+- [นำเสนอทีละ 4 ขั้น](https://krua-web-production.up.railway.app/api-docs/start/)
 - [Swagger](https://krua-web-production.up.railway.app/api-docs/reference/)
 
 ## ทดลองบนเครื่องโดยไม่ใช้ฐานข้อมูล
@@ -30,10 +30,10 @@ npm run demo
 ## ความสามารถและสิทธิ์
 
 - ทุกคนอ่านสูตร ค้นหา กรอง เรียงลำดับ และดูไอเดียจาก TheMealDB ได้
-- chef และ admin เพิ่มสูตรได้ เจ้าของสูตรที่มีสิทธิ์หรือ admin จัดการวัตถุดิบและลบสูตรได้
+- chef และ admin เพิ่มสูตรพร้อมวัตถุดิบได้ในครั้งเดียวแบบ atomic transaction เจ้าของสูตรที่มีสิทธิ์หรือ admin เพิ่มวัตถุดิบและลบสูตรผ่านการยืนยันชื่อสูตรได้
 - สมาชิกที่เข้าสู่ระบบให้คะแนนได้ครั้งเดียวต่อสูตร ระบบผูกผู้เขียนกับ JWT ไม่รับตัวตนจาก client
 - Token มีอายุ 15 นาที หน้าเว็บเก็บไว้ในหน่วยความจำ รีเฟรชแล้วต้องเข้าสู่ระบบใหม่ การเข้าเว็บไม่ได้ทำให้ Swagger เข้าสู่ระบบด้วย
-- ภาพรวมแยกจากคู่มือทดลองและ Swagger ภาพหน้าจอเป็นภาพประกอบแบบคงที่ ไม่ใช่หน้าจอสด ภาพอาหารเป็นภาพที่สร้างด้วย AI
+- หน้านำเสนอแยกจากหน้าใช้งานทั่วไป มี 4 ขั้น: เลือกสูตร → ดูวัตถุดิบ → เพิ่มสูตรผ่านเว็บ → อ่านกลับจาก API รายละเอียดเทคนิคเปิดเพิ่มได้ และมี Swagger แยกต่างหาก คู่มือส่ง GET เท่านั้น ส่วนการบันทึกในเว็บหรือ Swagger มีผลกับข้อมูลจริง ภาพอาหารเป็นภาพที่สร้างด้วย AI
 
 Swagger เรียกเซิร์ฟเวอร์เดียวกับหน้าเอกสาร หากเปิดเว็บออนไลน์แล้วกด Execute สำหรับคำสั่งเขียน จะเปลี่ยนข้อมูลจริง
 
@@ -45,6 +45,7 @@ src/             API, authentication, validation และ database adapter
 migrations/      schema migration และ rollback SQL
 test/            ชุดทดสอบอัตโนมัติ
 tools/           demo, migration, cloud bootstrap และเครื่องมือตรวจ
+docs/            ERD, coverage, isolated-DB/API evidence และ release verification
 openapi.yaml     API specification ที่ทดสอบเทียบกับ routes จริง
 schema.sql       schema ตั้งต้นสำหรับฐานข้อมูลใหม่
 seed.sql         ข้อมูลจำลอง
@@ -60,7 +61,13 @@ npm run coverage
 npm audit
 ```
 
-ก่อนเผยแพร่รอบนี้ ชุดทดสอบหลักผ่าน 140 tests ใน 11 suites และ UI assertions 6 กลุ่ม ผลนี้ไม่ใช่การรับรอง production security หรือการทดสอบกับผู้ใช้จริง npm run test:real และสคริปต์ MySQL verification ต้องเตรียมฐานข้อมูลทดสอบแยกก่อน ไม่ใช้ฐานข้อมูลออนไลน์ในการทดสอบลบหรือ migration rollback
+รอบ 25 ตุลาคม 2026 ชุดทดสอบล่าสุดผ่าน 212 tests ใน 14 suites หลังแก้ภาพเก่าและฟอนต์ Swagger; UI behavior แบบ VM ผ่าน 10 กลุ่มแยกต่างหาก Coverage ของ backend ที่ไม่เปลี่ยนยังเป็น lines 94.19%, statements 93.32%, branches 85.79%, functions 98.46%.
+
+ผลฐานข้อมูลเดิมที่แยกทดสอบด้วย MariaDB 11.8.6 ผ่าน 14 checkpoint groups และบันทึก 15 HTTP request/response examples โดยไม่ใช้ Production ผลนี้ไม่ใช่ exact MySQL 8 และไม่ใช่ browser E2E. npm run test:real และสคริปต์ MySQL verification ต้องเตรียมฐานข้อมูลทดสอบแยกก่อน ห้ามใช้ฐานข้อมูลออนไลน์ในการทดสอบลบหรือ migration rollback
+
+ตรวจเว็บจริงแบบอ่านข้อมูลผ่าน cloud browser แล้ว รวมหน้าแรก รายละเอียด เข้าสู่ระบบ ฟอร์ม guest คู่มือนำเสนอ 4 ขั้น และ Swagger GET ได้ 200 ตรวจความกว้าง 320/390/768/1280/1440 CSS pixels ด้วยการปรับหน้าต่างและ zoom บน desktop ไม่ใช่มือถือจริง ส่วน authenticated browser write E2E ยังไม่ได้รัน เพราะ browser เข้า preview แยกไม่ได้ ไม่มีการเขียนข้อมูล production เพื่อทดแทนการทดสอบนี้
+
+Release 3ebf76ed9a5b5f15f76c6e9a99e6695b1f26fa4a ยืนยัน remote main และ Railway SUCCESS แล้ว การลบภาพ login เก่าและฟอนต์ Swagger ตรวจหลัง deploy แล้ว: ลิงก์ภาพเก่า 0 รายการ, computed font และภาพจริงเป็น IBM Plex Sans Thai, expanded GET ที่กว้าง 320 มี scrollWidth 311 ไม่ล้น หลักฐาน docs/deployment-3ebf76e.json ยืนยัน asset ตรง source 9 ไฟล์และ public HTTP 200 อีก 8 เส้นทาง health OK และ storage=mysql (ไม่ใช่การยืนยัน exact MySQL 8) ส่วน source package ยังจัดส่งแยก ชุดภาพเลือกเฉพาะ *-viewport.png จาก krua-evidence/redesign-fcac037 ไม่รวม fullPage ที่ถูกครอปจาก zoom ไม่ใช่ 100% ดูขอบเขตหลักฐานใน docs/frontend-verification.md และ docs/release-checklist.md ไม่ถือว่าผล test เป็นการรับรองความปลอดภัยหรือความสมบูรณ์ทุกด้าน
 
 tools/verify-browser.js เป็นเครื่องมือทางเลือกที่ต้องมี Playwright เพิ่ม ไม่ใช่ dependency ของ quick start ด้านบน npm test และ npm run test:ui ไม่ต้องใช้เครื่องมือนี้
 
@@ -74,4 +81,4 @@ tools/cloud-bootstrap.js เป็น pre-deploy สำหรับฐานข�
 
 ไม่รวม node_modules, .env จริง, credentials, private login files, logs, audit/transaction records, database dumps, ZIP ส่งงาน, PPTX หรือไฟล์ตั้งค่าเฉพาะเครื่อง .gitignore ป้องกันไฟล์เหล่านี้ ส่วน .env.example, source, tests, migrations, ภาพที่เว็บใช้ และ license ของฟอนต์ต้องเก็บไว้
 
-ยังไม่มี registration, password reset, token revocation, high availability, production load/penetration test หรือ backup restore drill และไม่ได้เชื่อม repo นี้ให้ deploy อัตโนมัติ
+ยังไม่มี registration, password reset, token revocation, high availability, production load/penetration test หรือ backup restore drill ส่วน main เชื่อม Railway auto-deploy แล้ว และตรวจ release จริงด้วย GitHub deployment status พร้อม hash ของไฟล์ที่เซิร์ฟเวอร์ส่งกลับ

@@ -1,24 +1,30 @@
 # Release readiness, 25 October 2026
 
-## Verified baseline and recovery
+## Verified release and recovery
 
-Remote main is `df157f0b8e0a0d5f3e0f832645f7faf6d955b430`. Live app.js, styles.css and api-guide.css match that commit byte-for-byte after CRLF→LF normalization. Current changes do not modify schema, production environment variables, data migrations, credentials or resource configuration.
+Runtime release `3ebf76ed9a5b5f15f76c6e9a99e6695b1f26fa4a` is verified on remote main with Railway SUCCESS. Final refinement is now deployed and live-retested. `docs/deployment-3ebf76e.json` records tree `943f089f7a63c7d4f033c4b1e2456855bf85e8eb`, nine exact source/asset matches and eight public HTTP 200 probes, with health OK and storage reported as mysql. This storage label does not establish the exact database server version. No schema, production credentials, environment variables or infrastructure settings were changed in this UI revision.
 
-The tracked candidate patch was applied and reversed in a disposable clean baseline export; all 71 original tracked files were byte-identical after reversal. This verifies source reversibility, not an actual platform rollback execution. After publishing, recovery is a normal `git revert` of the release commit followed by the existing deploy flow, never a force push or production database reset. Recipe/ingredient data created using the new additive payload remains compatible with the old schema/API reads. New source files are removed by the revert automatically; no production data is deleted by source rollback.
+Historical recovery evidence: the initial candidate patch was applied and reversed in a disposable clean baseline export; all 71 original tracked files were byte-identical after reversal. This proves source reversibility for that candidate, not an actual platform rollback drill. Recovery for a bad release is a normal targeted git revert followed by the authorized deployment flow, never force push or a production database reset. Verify restored health and assets after any actual recovery. No production data should be deleted by a source rollback.
 
 ## Automated evidence
 
-- 196 tests across 12 suites pass; 10 additional VM UI behavior scenarios pass.
-- 31 guide tests cover request sequencing, errors, all static links/assets and anchor consistency.
-- Real disposable MariaDB11.8.6:14 checkpoint groups pass, including actual constraints, migrations, atomic create rollback and concurrent failure isolation. Exact MySQL8 is not tested this round.
-- 15 Postman request/response examples recorded against real MariaDB with a controlled localhost external upstream. Tokens redacted.
-- Failure scenarios S1–S8 pass. The final live TheMealDB baseline S0 degraded, so the overall report is not all-green; earlier live success is historical evidence only.
-- Node syntax checks and git whitespace checks pass. Local app responds200 when launched and requested within the same execution network context.
+- Latest local aggregate: **212 tests across 14 suites passed**, from `/tmp/krua-final212.log` after stale-image removal and Swagger-font fix.
+- Ten VM UI behavior scenarios passed separately. Neither suite is proof of browser write E2E.
+- Backend coverage baseline: statements 93.32%, branches 85.79%, functions 98.46%, lines 94.19%.
+- Prior unchanged-backend integration: disposable MariaDB 11.8.6 passed 14 checkpoint groups, including real constraints, migrations, atomic rollback and concurrent failure isolation. Exact MySQL 8 was not tested.
+- Fifteen Postman request/response examples were recorded against that MariaDB instance with controlled localhost external upstream; secrets were redacted.
+- Failure scenarios S1–S8 passed. Live TheMealDB baseline S0 degraded; do not report all scenarios green.
 
-## Release gates / remaining work
+## Browser evidence
 
-- Predeployment browser rendering was blocked. Postdeployment actual desktop and narrow-layout inspection found header/grid and empty-state issues; the follow-up fixes need live retesting.
-- First release9aaac60 published with explicit owner approval; Railway reported success. Exact assets and public smoke evidence are in deployment-9aaac60.json.
-- After deployment, verify health, actual DB storage, API/detail/Swagger, exact asset hashes and deployed commit where platform evidence exists.
-- Immediately inspect live desktop/mobile and keyboard behavior; record screenshots with exact viewport limitations. No mutation QA against production.
-- If severe runtime regression occurs, revert only the release commit, verify restored baseline hashes/health and report recovery accurately.
+Actual cloud browser review covered home/detail/login/guest-create and the four-step guide. Real recipe/ingredient/review GETs and Swagger Execute returned expected data; changing readback ID clears old output; empty-search reset works. Main/guide were checked at 320, 390, 768, 1280 and 1440 CSS pixels. Expanded Swagger did not widen the page at 320 or 390. Measurements used desktop window resizing and zoom, not mobile hardware or touch input. Browser Back from stage 4 to 3 worked; Tab from the stage-3 heading visibly outlined the create link. This is not a full keyboard audit.
+
+## Remaining release gates
+
+1. Final refinement verified: zero old login screenshot links; Swagger computed/rendered font is IBM Plex Sans Thai; expanded GET at width 320 has scrollWidth 311 and no overflow. Deployment/asset checks are recorded above.
+2. Finish source packaging and select only `*-viewport.png` from `krua-evidence/redesign-fcac037`. Exclude cropped full-page captures taken at non-100% zoom. Earlier e89f2c5 evidence is historical and may be omitted from the final package.
+3. Authenticated browser write E2E remains blocked by isolated-preview network refusal. Do not substitute production writes or claim the API/database tests cover rendered browser behavior.
+4. The actual PPTX is prepared and verified as nine slides, five main plus four hidden supporting slides, with notes. Final screenshot/source packaging is separate from PPTX readiness.
+5. Preserve exact MySQL 8, touch-device, full accessibility/performance and load/penetration-test limitations in the handover.
+
+No production mutation was performed during browser QA. This checklist is evidence and remaining work, not a universal completion claim.

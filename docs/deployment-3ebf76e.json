@@ -1,0 +1,108 @@
+{
+  "checkedAt": "2026-10-25T05:47:36.339833+00:00",
+  "commit": "3ebf76ed9a5b5f15f76c6e9a99e6695b1f26fa4a",
+  "tree": "943f089f7a63c7d4f033c4b1e2456855bf85e8eb",
+  "results": [
+    {
+      "route": "/",
+      "status": 200,
+      "matchesSource": true,
+      "sha256": "f6bcfd2401c3beffe9626046605c6fbd038030806207f2ed8667aecb7904728e"
+    },
+    {
+      "route": "/app.js",
+      "status": 200,
+      "matchesSource": true,
+      "sha256": "b5f7cd1ee70a8a5260d184f3fca6ad0e1b81e0df5371615edb62fde6e815a410"
+    },
+    {
+      "route": "/styles.css",
+      "status": 200,
+      "matchesSource": true,
+      "sha256": "1b66b1a44200f78140f6ec5ae9c7d4a4893a5749be2b6dc35d97c2d13f655f7d"
+    },
+    {
+      "route": "/api-guide.css",
+      "status": 200,
+      "matchesSource": true,
+      "sha256": "33da0a9082838847e9045afefae3430e5cf0226e8500251883808c6c22cd8527"
+    },
+    {
+      "route": "/api-guide.js",
+      "status": 200,
+      "matchesSource": true,
+      "sha256": "ca72a926d239c5f2e70ca06fc0914db417d45089012cd932529497e3882708d4"
+    },
+    {
+      "route": "/api-docs/",
+      "status": 200,
+      "matchesSource": true,
+      "sha256": "0bbe02af87ad9b4dbcca3337fa79ebcbfda3d315fac920443b9ed31f570b6eb7"
+    },
+    {
+      "route": "/api-docs/start/",
+      "status": 200,
+      "matchesSource": true,
+      "sha256": "01960c2d63761704f3cbb868eb9282ac2cea885c7da617e0c84f1adc3309eba3"
+    },
+    {
+      "route": "/assets/ibm-plex-sans-thai-400.ttf",
+      "status": 200,
+      "matchesSource": true,
+      "sha256": "eee061d1bac39be40f9bb94498898cd1894f5d3d9a2f0ee6cbd48a6bd03d052b"
+    },
+    {
+      "route": "/openapi.yaml",
+      "status": 200,
+      "matchesSource": true,
+      "sha256": "d1faf09227f946b5422b1c9cde1c5eaaa5ed993ee7a11558056263f05a742f4c"
+    },
+    {
+      "route": "/healthz",
+      "status": 200,
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "route": "/api/v1/system",
+      "status": 200,
+      "body": {
+        "message": "สถานะระบบสูตรอาหาร",
+        "data": {
+          "architecture": "modular-monolith",
+          "storage": "mysql",
+          "contexts": [
+            "recipe-catalog",
+            "community-reviews",
+            "meal-discovery"
+          ]
+        }
+      }
+    },
+    {
+      "route": "/api/v1/recipes",
+      "status": 200
+    },
+    {
+      "route": "/api/v1/recipes/1",
+      "status": 200
+    },
+    {
+      "route": "/api/v1/recipes/1/ratings",
+      "status": 200
+    },
+    {
+      "route": "/api/v1/categories",
+      "status": 200
+    },
+    {
+      "route": "/api/v1/ingredients",
+      "status": 200
+    },
+    {
+      "route": "/api-docs/reference/",
+      "status": 200
+    }
+  ]
+}
