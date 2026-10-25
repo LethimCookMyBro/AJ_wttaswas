@@ -1,0 +1,1173 @@
+openapi: 3.0.3
+info:
+  title: Recipe Management API
+  version: 3.0.0
+  description: >
+    RESTful API สำหรับจัดการข้อมูลสูตรอาหาร วัตถุดิบ และรีวิว (โครงงานระยะที่ 3,
+    88736065 API for Back-End Development)
+
+
+    - รหัสนิสิต 67160003, Pno = 4 (ระบบข้อมูลสูตรอาหาร)
+
+    - ทุก endpoint ในเอกสารนี้มีอยู่จริงใน `src/index.js` และมีชุดทดสอบ (`npm
+    test`) ตรวจว่าเอกสารกับโค้ดตรงกัน
+
+    - รูปแบบ error ทุกกรณีเป็น `{ "error": { "code": "...", "message": "..." }
+    }`
+
+    - หมายเหตุ: endpoint รายการ/รายละเอียดสูตรอาหาร (`GET /recipes`, `GET
+    /recipes/{id}`) คืนชื่อฟิลด์แบบ snake_case
+    ตามคอลัมน์ฐานข้อมูลตั้งแต่โครงงานระยะที่ 1 ส่วน endpoint ที่เพิ่มในระยะที่ 2
+    ใช้ camelCase
+
+
+    Phase 3 adds JWT login, chef/admin ownership checks, pagination, and
+    category TTL caching. JSON request limit is 64kb. Authentication is required
+    for all writes. Tokens expire after 15 minutes. Category cache is one entry
+    with 30-second TTL.
+servers:
+  - url: /
+    description: เซิร์ฟเวอร์เดียวกับหน้าเอกสารนี้ (ตอนรันในเครื่องคือ
+      http://localhost:3000 ตามค่า PORT)
+tags:
+  - name: Recipes
+    description: สูตรอาหาร
+  - name: Categories
+    description: หมวดหมู่อาหาร
+  - name: Ingredients
+    description: วัตถุดิบ และการผูกวัตถุดิบกับสูตรอาหาร
+  - name: Ratings
+    description: คะแนนและรีวิวสูตรอาหาร
+  - name: External
+    description: การเชื่อมต่อบริการภายนอก (มี retry, timeout, fallback)
+paths:
+  /api/v1/recipes:
+    get:
+      tags:
+        - Recipes
+      operationId: listRecipes
+      summary: ดูรายการสูตรอาหารทั้งหมดพร้อมชื่อหมวดหมู่ (UC-01)
+      responses:
+        "200":
+          description: สำเร็จ
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - data
+                  - pagination
+                properties:
+                  message:
+                    type: string
+                    example: ดึงรายการสูตรอาหารสำเร็จ
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RecipeListItem"
+                  pagination:
+                    type: object
+                    required:
+                      - page
+                      - limit
+                      - total
+                      - totalPages
+                    properties:
+                      page:
+                        type: integer
+                        minimum: 1
+                      limit:
+                        type: integer
+                        minimum: 1
+                      total:
+                        type: integer
+                        minimum: 0
+                      totalPages:
+                        type: integer
+                        minimum: 0
+        "400":
+          description: Invalid pagination, filter or sort. Unknown query keys are rejected.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 99999
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: categoryId
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 9999999999
+        - name: difficulty
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - easy
+              - medium
+              - hard
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - id_asc
+              - id_desc
+              - name_asc
+              - cook_time_asc
+            default: id_asc
+        - in: query
+          name: search
+          schema:
+            type: string
+            maxLength: 150
+          description: Trimmed literal name substring. Percent, underscore and exclamation
+            are literal characters, not SQL wildcards.
+    post:
+      tags:
+        - Recipes
+      operationId: createRecipe
+      summary: สร้างสูตรอาหารใหม่ (UC-03)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRecipeRequest"
+            example:
+              name: ต้มยำกุ้งน้ำข้น
+              categoryId: 1
+              authorId: 1
+              instructions: ต้มน้ำ ใส่ข่า ตะไคร้ ใบมะกรูด แล้วใส่กุ้ง
+              cookTimeMinutes: 25
+              difficulty: medium
+      responses:
+        "201":
+          description: สร้างสำเร็จ
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - data
+                properties:
+                  message:
+                    type: string
+                    example: สร้างสูตรอาหารสำเร็จ
+                  data:
+                    $ref: "#/components/schemas/CreatedRecipe"
+        "400":
+          description: ข้อมูลไม่ครบหรือไม่ถูกต้อง (VALIDATION_ERROR) หรือ JSON ผิดรูปแบบ
+            (INVALID_JSON)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error:
+                  code: VALIDATION_ERROR
+                  message: กรุณาระบุ name, categoryId, authorId และ instructions ให้ครบถ้วน
+        "401":
+          description: Missing, invalid or expired Bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Role, ownership or body identity mismatch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: ไม่พบหมวดหมู่หรือผู้เขียนที่ระบุ (REFERENCE_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "413":
+          description: JSON body exceeds 64kb
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - bearerAuth: []
+  /api/v1/recipes/{id}:
+    parameters:
+      - $ref: "#/components/parameters/RecipeId"
+    get:
+      tags:
+        - Recipes
+      operationId: getRecipe
+      summary: ดูรายละเอียดสูตรอาหารพร้อมวัตถุดิบ (UC-02)
+      responses:
+        "200":
+          description: สำเร็จ
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - data
+                properties:
+                  message:
+                    type: string
+                    example: ดึงข้อมูลสูตรอาหารสำเร็จ
+                  data:
+                    $ref: "#/components/schemas/RecipeDetail"
+        "400":
+          $ref: "#/components/responses/InvalidId"
+        "404":
+          $ref: "#/components/responses/RecipeNotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    delete:
+      tags:
+        - Recipes
+      operationId: deleteRecipe
+      summary: ลบสูตรอาหาร (UC-06) วัตถุดิบและรีวิวของสูตรถูกลบตามอัตโนมัติ (ON DELETE
+        CASCADE)
+      responses:
+        "200":
+          description: ลบสำเร็จ
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    example: ลบสูตรอาหารสำเร็จ
+        "400":
+          $ref: "#/components/responses/InvalidId"
+        "401":
+          description: Missing, invalid or expired Bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Role, ownership or body identity mismatch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/RecipeNotFound"
+        "413":
+          description: JSON body exceeds 64kb
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - bearerAuth: []
+  /api/v1/recipes/{id}/ingredients:
+    parameters:
+      - $ref: "#/components/parameters/RecipeId"
+    post:
+      tags:
+        - Ingredients
+      operationId: addRecipeIngredient
+      summary: เพิ่มวัตถุดิบลงในสูตรอาหาร (UC-04) วัตถุดิบซ้ำในสูตรเดียวไม่ได้
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddRecipeIngredientRequest"
+            example:
+              ingredientId: 4
+              quantity: 4
+              unit: cloves
+      responses:
+        "201":
+          description: เพิ่มสำเร็จ
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - data
+                properties:
+                  message:
+                    type: string
+                    example: เพิ่มวัตถุดิบในสูตรอาหารสำเร็จ
+                  data:
+                    $ref: "#/components/schemas/CreatedRecipeIngredient"
+        "400":
+          description: id ไม่ถูกต้อง (INVALID_ID), ข้อมูลไม่ถูกต้อง (VALIDATION_ERROR)
+            หรือ JSON ผิดรูปแบบ (INVALID_JSON)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing, invalid or expired Bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Role, ownership or body identity mismatch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: ไม่พบสูตรอาหาร (RECIPE_NOT_FOUND) หรือไม่พบวัตถุดิบ
+            (INGREDIENT_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: วัตถุดิบนี้อยู่ในสูตรอาหารแล้ว (INGREDIENT_ALREADY_IN_RECIPE)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "413":
+          description: JSON body exceeds 64kb
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - bearerAuth: []
+  /api/v1/recipes/{id}/ratings:
+    parameters:
+      - $ref: "#/components/parameters/RecipeId"
+    get:
+      tags:
+        - Ratings
+      operationId: listRecipeRatings
+      summary: ดูรีวิวทั้งหมดของสูตรอาหารพร้อมคะแนนเฉลี่ย
+      responses:
+        "200":
+          description: สำเร็จ (ถ้ายังไม่มีรีวิว averageScore เป็น null)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - data
+                properties:
+                  message:
+                    type: string
+                    example: ดึงรีวิวสูตรอาหารสำเร็จ
+                  data:
+                    $ref: "#/components/schemas/RatingList"
+        "400":
+          $ref: "#/components/responses/InvalidId"
+        "404":
+          $ref: "#/components/responses/RecipeNotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      tags:
+        - Ratings
+      operationId: createRecipeRating
+      summary: ให้คะแนนและรีวิวสูตรอาหาร (UC-05)
+        ผู้ใช้หนึ่งคนรีวิวสูตรเดียวได้ครั้งเดียว
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRatingRequest"
+            example:
+              userId: 2
+              ratingScore: 5
+              reviewComment: อร่อยมาก ทำตามง่าย
+      responses:
+        "201":
+          description: บันทึกสำเร็จ
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - data
+                properties:
+                  message:
+                    type: string
+                    example: บันทึกรีวิวสำเร็จ
+                  data:
+                    $ref: "#/components/schemas/CreatedRating"
+        "400":
+          description: id ไม่ถูกต้อง (INVALID_ID), คะแนนไม่อยู่ในช่วง 1-5
+            หรือข้อมูลไม่ถูกต้อง (VALIDATION_ERROR) หรือ JSON ผิดรูปแบบ
+            (INVALID_JSON)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing, invalid or expired Bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Role, ownership or body identity mismatch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: ไม่พบสูตรอาหาร (RECIPE_NOT_FOUND) หรือไม่พบผู้ใช้ (USER_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: ผู้ใช้นี้รีวิวสูตรนี้ไปแล้ว (RATING_ALREADY_EXISTS)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "413":
+          description: JSON body exceeds 64kb
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - bearerAuth: []
+  /api/v1/categories:
+    get:
+      tags:
+        - Categories
+      operationId: listCategories
+      summary: ดูรายการหมวดหมู่อาหาร
+      responses:
+        "200":
+          description: สำเร็จ
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - data
+                properties:
+                  message:
+                    type: string
+                    example: ดึงรายการหมวดหมู่สำเร็จ
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Category"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v1/ingredients:
+    get:
+      tags:
+        - Ingredients
+      operationId: listIngredients
+      summary: ดูรายการวัตถุดิบทั้งหมดในคลัง
+      responses:
+        "200":
+          description: สำเร็จ
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - data
+                properties:
+                  message:
+                    type: string
+                    example: ดึงรายการวัตถุดิบสำเร็จ
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Ingredient"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v1/external/meal-ideas:
+    get:
+      tags:
+        - External
+      operationId: getMealIdeas
+      summary: ค้นหาไอเดียเมนูจากวัตถุดิบ ผ่านบริการภายนอก TheMealDB
+      description: >
+        เรียก TheMealDB (`filter.php?i=<ingredient>`) ด้วยกลไกความทนทาน
+
+
+        - **Timeout** 3 วินาทีต่อครั้ง
+
+        - **Retry** ลองใหม่ 2 ครั้ง (รวมเป็น 3 ครั้ง) เมื่อเกิด network error,
+        timeout หรือ 5xx โดยรอ 300ms แล้ว 600ms (exponential backoff)
+        ไม่ลองซ้ำเมื่อได้ 4xx
+
+        - **Fallback** เมื่อล้มเหลวครบทุกครั้ง ตอบ `200` พร้อม `source =
+        fallback`, `degraded = true` และรายการสำรองของระบบ แทนที่จะตอบ error
+      parameters:
+        - name: ingredient
+          in: query
+          required: true
+          description: ชื่อวัตถุดิบภาษาอังกฤษ (ตัวอักษร ช่องว่าง _ - ยาวไม่เกิน 50)
+          schema:
+            type: string
+            example: chicken_breast
+      responses:
+        "200":
+          description: สำเร็จ ดูฟิลด์ `source` ว่ามาจากบริการภายนอก (`themealdb`)
+            หรือรายการสำรอง (`fallback`) header `X-Data-Source` มีค่าเดียวกัน
+          headers:
+            X-Data-Source:
+              description: แหล่งข้อมูลของผลลัพธ์
+              schema:
+                type: string
+                enum:
+                  - themealdb
+                  - fallback
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - data
+                properties:
+                  message:
+                    type: string
+                    example: ดึงไอเดียเมนูจากบริการภายนอกสำเร็จ
+                  data:
+                    $ref: "#/components/schemas/MealIdeas"
+              examples:
+                fromExternalApi:
+                  summary: บริการภายนอกตอบปกติ
+                  value:
+                    message: ดึงไอเดียเมนูจากบริการภายนอกสำเร็จ
+                    data:
+                      source: themealdb
+                      degraded: false
+                      attempts: 1
+                      ideas:
+                        - id: "53466"
+                          name: Belgian Waterzooi Chicken
+                          thumbnail: https://www.themealdb.com/images/media/meals/nmxec11782498644.jpg
+                fallback:
+                  summary: บริการภายนอกล้มเหลวครบทุกครั้ง
+                  value:
+                    message: ไม่สามารถเชื่อมต่อบริการแนะนำเมนูภายนอกได้ในขณะนี้
+                      จึงแสดงรายการสำรองของระบบแทน
+                    data:
+                      source: fallback
+                      degraded: true
+                      reason: NETWORK_ERROR
+                      attempts: 3
+                      ideas:
+                        - id: local-1
+                          name: ผัดกะเพราหมูสับไข่ดาว
+                          thumbnail: null
+        "400":
+          description: ingredient ไม่ถูกต้องหรือไม่ได้ระบุ (VALIDATION_ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Authentication
+      operationId: login
+      summary: Authenticate an existing fixture user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                password:
+                  type: string
+                  format: password
+                  minLength: 1
+                  maxLength: 256
+      responses:
+        "200":
+          description: JWT and user; Cache-Control no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - data
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    required:
+                      - token
+                      - user
+                    properties:
+                      token:
+                        type: string
+                      user:
+                        type: object
+                        required:
+                          - id
+                          - username
+                          - role
+                        properties:
+                          id:
+                            type: integer
+                          username:
+                            type: string
+                          role:
+                            type: string
+                            enum:
+                              - member
+                              - chef
+                              - admin
+        "400":
+          description: Invalid credentials input or malformed JSON
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Invalid username or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "413":
+          description: JSON body exceeds 64kb
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/v1/system:
+    get:
+      tags:
+        - System
+      operationId: getSystem
+      summary: ตรวจโหมดข้อมูลและ bounded contexts ของระบบ
+      responses:
+        "200":
+          description: สำเร็จ ระบุ storage ตามที่รันจริงเป็น in-memory หรือ mysql
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - data
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    required:
+                      - architecture
+                      - storage
+                      - contexts
+                    properties:
+                      architecture:
+                        type: string
+                        enum:
+                          - modular-monolith
+                      storage:
+                        type: string
+                        enum:
+                          - in-memory
+                          - mysql
+                      contexts:
+                        type: array
+                        items:
+                          type: string
+                          enum:
+                            - recipe-catalog
+                            - community-reviews
+                            - meal-discovery
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+components:
+  parameters:
+    RecipeId:
+      name: id
+      in: path
+      required: true
+      description: รหัสสูตรอาหาร (จำนวนเต็มบวก)
+      schema:
+        type: integer
+        minimum: 1
+        example: 1
+  responses:
+    InvalidId:
+      description: id ไม่ใช่จำนวนเต็มบวก (INVALID_ID)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: INVALID_ID
+              message: id ต้องเป็นจำนวนเต็มบวก
+    RecipeNotFound:
+      description: ไม่พบสูตรอาหาร (RECIPE_NOT_FOUND)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: RECIPE_NOT_FOUND
+              message: ไม่พบข้อมูลสูตรอาหารที่ระบุ
+    PayloadTooLarge:
+      description: request body ใหญ่เกิน 64kb (PAYLOAD_TOO_LARGE)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    InternalError:
+      description: ข้อผิดพลาดภายในระบบหรือฐานข้อมูล (INTERNAL_SERVER_ERROR)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: INTERNAL_SERVER_ERROR
+              message: เกิดข้อผิดพลาดภายในระบบฐานข้อมูล
+    RateLimited:
+      description: Per-process IP limiter. API 200 requests/minute; login 10
+        attempts/minute. Retry-After reports remaining seconds.
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              example: RECIPE_NOT_FOUND
+            message:
+              type: string
+    Category:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: อาหารคาวไทย
+        description:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    Ingredient:
+      type: object
+      required:
+        - id
+        - name
+        - unit_type
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: หมูสับ
+        unit_type:
+          type: string
+          example: grams
+    RecipeListItem:
+      type: object
+      required:
+        - id
+        - name
+        - cook_time_minutes
+        - difficulty
+        - category_id
+        - category_name
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: ผัดกะเพราหมูสับไข่ดาว
+        cook_time_minutes:
+          type: integer
+          example: 15
+        difficulty:
+          type: string
+          enum:
+            - easy
+            - medium
+            - hard
+        category_id:
+          type: integer
+          example: 1
+        category_name:
+          type: string
+          example: อาหารคาวไทย
+    RecipeIngredientLine:
+      type: object
+      required:
+        - ingredient_id
+        - name
+        - quantity
+        - unit
+      properties:
+        ingredient_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: หมูสับ
+        quantity:
+          type: number
+          example: 200
+        unit:
+          type: string
+          example: grams
+    RecipeDetail:
+      allOf:
+        - $ref: "#/components/schemas/RecipeListItem"
+        - type: object
+          required:
+            - instructions
+            - ingredients
+          properties:
+            instructions:
+              type: string
+            ingredients:
+              type: array
+              items:
+                $ref: "#/components/schemas/RecipeIngredientLine"
+    CreateRecipeRequest:
+      type: object
+      required:
+        - name
+        - categoryId
+        - instructions
+      properties:
+        name:
+          type: string
+          maxLength: 150
+        categoryId:
+          type: integer
+          minimum: 1
+        authorId:
+          type: integer
+          minimum: 1
+          description: Optional legacy field. Must match the authenticated user; server
+            derives identity from the token.
+        instructions:
+          type: string
+          minLength: 1
+          maxLength: 10000
+        cookTimeMinutes:
+          type: integer
+          minimum: 1
+          default: 15
+          maximum: 1440
+        difficulty:
+          type: string
+          enum:
+            - easy
+            - medium
+            - hard
+          default: easy
+    CreatedRecipe:
+      type: object
+      required:
+        - id
+        - name
+        - categoryId
+        - authorId
+        - cookTimeMinutes
+        - difficulty
+      properties:
+        id:
+          type: integer
+          example: 4
+        name:
+          type: string
+        categoryId:
+          type: integer
+        authorId:
+          type: integer
+        cookTimeMinutes:
+          type: integer
+        difficulty:
+          type: string
+          enum:
+            - easy
+            - medium
+            - hard
+    AddRecipeIngredientRequest:
+      type: object
+      required:
+        - ingredientId
+        - quantity
+        - unit
+      properties:
+        ingredientId:
+          type: integer
+          minimum: 1
+        quantity:
+          type: number
+          minimum: 0.01
+          maximum: 999999.99
+          description: ปริมาณตามคอลัมน์ DECIMAL ของฐานข้อมูล ทศนิยมไม่เกิน 2 ตำแหน่ง
+        unit:
+          type: string
+          maxLength: 50
+    CreatedRecipeIngredient:
+      type: object
+      required:
+        - id
+        - recipeId
+        - ingredientId
+        - quantity
+        - unit
+      properties:
+        id:
+          type: integer
+        recipeId:
+          type: integer
+        ingredientId:
+          type: integer
+        quantity:
+          type: number
+        unit:
+          type: string
+    CreateRatingRequest:
+      type: object
+      required:
+        - ratingScore
+      properties:
+        userId:
+          type: integer
+          minimum: 1
+          description: Optional legacy field. Must match the authenticated user; server
+            derives identity from the token.
+        ratingScore:
+          type: integer
+          minimum: 1
+          maximum: 5
+        reviewComment:
+          type: string
+          maxLength: 2000
+    CreatedRating:
+      type: object
+      required:
+        - id
+        - recipeId
+        - userId
+        - ratingScore
+        - reviewComment
+      properties:
+        id:
+          type: integer
+        recipeId:
+          type: integer
+        userId:
+          type: integer
+        ratingScore:
+          type: integer
+          minimum: 1
+          maximum: 5
+        reviewComment:
+          type: string
+          nullable: true
+    RatingList:
+      type: object
+      required:
+        - recipeId
+        - ratingCount
+        - averageScore
+        - ratings
+      properties:
+        recipeId:
+          type: integer
+        ratingCount:
+          type: integer
+        averageScore:
+          type: number
+          nullable: true
+          example: 4.5
+        ratings:
+          type: array
+          items:
+            type: object
+            required:
+              - id
+              - userId
+              - username
+              - ratingScore
+              - reviewComment
+              - createdAt
+            properties:
+              id:
+                type: integer
+              userId:
+                type: integer
+              username:
+                type: string
+              ratingScore:
+                type: integer
+                minimum: 1
+                maximum: 5
+              reviewComment:
+                type: string
+                nullable: true
+              createdAt:
+                type: string
+                format: date-time
+    MealIdeas:
+      type: object
+      required:
+        - source
+        - degraded
+        - attempts
+        - ideas
+      properties:
+        source:
+          type: string
+          enum:
+            - themealdb
+            - fallback
+        degraded:
+          type: boolean
+          description: true เมื่อใช้รายการสำรอง
+        reason:
+          type: string
+          enum:
+            - TIMEOUT
+            - NETWORK_ERROR
+            - UPSTREAM_5XX
+            - UPSTREAM_4XX
+            - INVALID_RESPONSE
+            - UNEXPECTED_ERROR
+          description: สาเหตุที่ต้องใช้ fallback (มีเฉพาะเมื่อ degraded = true)
+        attempts:
+          type: integer
+          description: จำนวนครั้งที่เรียกบริการภายนอก
+        ideas:
+          type: array
+          items:
+            type: object
+            required:
+              - id
+              - name
+              - thumbnail
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              thumbnail:
+                type: string
+                nullable: true
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

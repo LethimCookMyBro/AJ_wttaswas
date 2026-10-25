@@ -1,0 +1,51 @@
+{
+  "name": "recipe-management-api-phase3",
+  "version": "3.0.0",
+  "description": "Phase 3 final integration, local recipe frontend and project defense",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "jest --runInBand",
+    "postman": "node tools/record-postman.js",
+    "failure-scenarios": "node tools/run-failure-scenarios.js",
+    "demo": "node tools/demo.js",
+    "coverage": "jest --runInBand --coverage --collectCoverageFrom=src/**/*.js --coverageReporters=text --coverageReporters=json-summary --coverageReporters=lcov",
+    "test:ui": "node tools/check-rating-refresh.js",
+    "migrate": "node tools/migrate.js",
+    "setup-demo": "node tools/setup-demo.js",
+    "test:real": "node tools/real-db-smoke.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "mysql2": "^3.9.7",
+    "swagger-ui-express": "^5.0.1",
+    "yaml": "^2.6.1",
+    "express-rate-limit": "8.7.1",
+    "jsonwebtoken": "9.0.3"
+  },
+  "devDependencies": {
+    "@apidevtools/swagger-parser": "^10.1.1",
+    "jest": "^29.7.0",
+    "jest-openapi": "^0.14.2",
+    "supertest": "^7.0.0"
+  },
+  "jest": {
+    "setupFiles": [
+      "<rootDir>/test/setup.js"
+    ],
+    "roots": [
+      "<rootDir>/test"
+    ],
+    "modulePathIgnorePatterns": [
+      "<rootDir>/.transaction/"
+    ]
+  },
+  "overrides": {
+    "axios": "$axios"
+  }
+}

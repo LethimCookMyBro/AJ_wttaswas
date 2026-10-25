@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.png binary
+*.webp binary
+*.ttf binary
+*.pdf binary
+# Preserve Markdown hard breaks and the verbatim third-party font license.
+*.md whitespace=-blank-at-eol
+frontend/assets/Noto-Sans-Thai-LICENSE.txt -whitespace
