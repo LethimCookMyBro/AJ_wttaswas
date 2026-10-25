@@ -11,6 +11,7 @@ function add(name, method, route, body, expected, capture) {
   collection.item.push({ name, request: { method, header: body ? [{key:"Content-Type",value:"application/json"}] : [], auth: route.endsWith("/login") ? {type:"noauth"} : { type:"bearer",bearer:[{key:"token",value:"{{token}}",type:"string"}] }, url: "{{baseUrl}}"+route, ...(body ? {body:{mode:"raw",raw:JSON.stringify(body,null,2),options:{raw:{language:"json"}}}} : {}) }, event:[{listen:"test",script:{type:"text/javascript",exec:scripts}}] });
 }
 add("Login chef", "POST", "/api/v1/auth/login", {username:"chef_somchai",password:"{{demoPassword}}"},200,"token");
+add("Read system architecture and storage", "GET", "/api/v1/system",null,200);
 add("List categories", "GET", "/api/v1/categories",null,200);
 add("List ingredients", "GET", "/api/v1/ingredients",null,200);
 add("Filter and paginate recipes", "GET", "/api/v1/recipes?page=1&limit=2&difficulty=easy&sort=cook_time_asc",null,200);
@@ -73,7 +74,9 @@ async function recordCollection(document, baseUrl, password) {
 async function main() {
   require("dotenv").config();
   if (process.argv.includes("--record")) await recordCollection(collection, process.env.POSTMAN_BASE_URL || `http://127.0.0.1:${process.env.PORT || 3000}`, process.env.DEMO_PASSWORD);
-  fs.writeFileSync(path.join(__dirname, "../postman_collection.json"), JSON.stringify(collection, null, 2) + "\n");
+  const outputName = process.argv.includes("--record") ? "postman_recorded.json" : "postman_template.json";
+  fs.writeFileSync(path.join(__dirname, "..", outputName), JSON.stringify(collection, null, 2) + "\n");
+  console.log(`Output: ${outputName}; teacher evidence postman_collection.json is never overwritten.`);
   console.log(`Wrote ${collection.item.length} ordered requests; ${process.argv.includes("--record") ? "observed examples with login tokens redacted" : "generation only, no observed examples"}`);
 }
 if (require.main === module) main().catch((err) => { console.error(err.message); process.exitCode = 1; });

@@ -68,7 +68,8 @@ app.get("/openapi.yaml", (req, res) => res.type("text/yaml").send(openapiText));
 const openapiSpec = YAML.parse(openapiText);
 const swaggerOptions = { customSiteTitle: "ครัวแบ่งปัน | ทดลอง API", customCssUrl: "/api-guide.css", swaggerOptions: { docExpansion: "list", defaultModelsExpandDepth: -1, persistAuthorization: false, deepLinking: true } };
 app.use("/api-docs/reference", swaggerUi.serveFiles(openapiSpec, swaggerOptions), swaggerUi.setup(openapiSpec, swaggerOptions));
-app.get("/api-docs/start", (req, res) => res.sendFile(path.join(__dirname, "..", "frontend", "api-start.html")));
+app.get("/api-docs/start", (req, res) => res.redirect(302, "/api-docs/"));
+app.get("/api-start.html", (req, res) => res.redirect(302, "/api-docs/"));
 app.get("/api-docs", (req, res) => res.sendFile(path.join(__dirname, "..", "frontend", "api-guide.html")));
 
 // -------------------------------------------------------------

@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-10-25T06:02:17.674Z",
+  "source": "openapi.yaml",
+  "collection": "postman_collection.json",
+  "operationCount": 12,
+  "observedExampleCount": 16,
+  "operations": [
+    "DELETE /api/v1/recipes/{id}",
+    "GET /api/v1/categories",
+    "GET /api/v1/external/meal-ideas",
+    "GET /api/v1/ingredients",
+    "GET /api/v1/recipes",
+    "GET /api/v1/recipes/{id}",
+    "GET /api/v1/recipes/{id}/ratings",
+    "GET /api/v1/system",
+    "POST /api/v1/auth/login",
+    "POST /api/v1/recipes",
+    "POST /api/v1/recipes/{id}/ingredients",
+    "POST /api/v1/recipes/{id}/ratings"
+  ],
+  "missing": [],
+  "scope": "All OpenAPI method/path operations have an observed response, not all statuses/error permutations. 15 preserved MariaDB examples + 1 read-only isolated-system supplement. Controlled localhost external upstream; no production writes. Tests/openapi.test.js separately compares registered Express /api/v1 routes to specification."
+}

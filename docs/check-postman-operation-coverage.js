@@ -1,0 +1,25 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const assert = require('node:assert/strict');
+const YAML = require('yaml');
+const root = path.resolve(__dirname, '..');
+const spec = YAML.parse(fs.readFileSync(path.join(root, 'openapi.yaml'), 'utf8'));
+const collection = JSON.parse(fs.readFileSync(path.join(root, 'postman_collection.json'), 'utf8'));
+const methods = new Set(['get','post','put','patch','delete','head','options','trace']);
+const required = Object.entries(spec.paths).flatMap(([route, item]) => Object.keys(item).filter(m=>methods.has(m)).map(m=>`${m.toUpperCase()} ${route}`)).sort();
+const flatten = items => items.flatMap(item => item.item ? flatten(item.item) : [item]);
+const items = flatten(collection.item);
+const observed = items.map(item => {
+  assert.ok(item.response?.length, `No observed response: ${item.name}`);
+  const url = typeof item.request.url === 'string' ? item.request.url : item.request.url.raw;
+  const route = url.replace('{{baseUrl}}','').split('?')[0].replace('{{newRecipeId}}','{id}');
+  return `${item.request.method} ${route}`;
+});
+const covered = [...new Set(observed)].sort();
+assert.deepEqual(covered, required, 'Observed collection must match every OpenAPI method/path operation');
+const baseline = JSON.parse(fs.readFileSync(path.join(__dirname, 'postman-observed-mariadb.json'), 'utf8'));
+assert.deepEqual(collection.item.slice(0,baseline.item.length),baseline.item,'Preserve original observed examples unchanged');
+for(const variable of collection.variable) if(['token','demoPassword'].includes(variable.key)) assert.equal(variable.value,'');
+const report={checkedAt:new Date().toISOString(),source:'openapi.yaml',collection:'postman_collection.json',operationCount:required.length,observedExampleCount:items.length,operations:required,missing:[],scope:'All OpenAPI method/path operations have an observed response, not all statuses/error permutations. 15 preserved MariaDB examples + 1 read-only isolated-system supplement. Controlled localhost external upstream; no production writes. Tests/openapi.test.js separately compares registered Express /api/v1 routes to specification.'};
+fs.writeFileSync(path.join(__dirname,'postman-operation-coverage.json'),JSON.stringify(report,null,2)+'\n');
+console.log(JSON.stringify(report,null,2));

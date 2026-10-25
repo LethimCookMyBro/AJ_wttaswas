@@ -24,7 +24,7 @@ test('product typography is self-hosted with licensed genuine font assets', () =
 });
 
 test('product and presentation entry remain separate without repeated discovery panels', () => {
-  expect(html).toMatch(/class="docs-link" href="\/api-docs\/">นำเสนอ<\/a>/);
+  expect(html).toMatch(/class="docs-link" href="\/api-docs\/">เอกสารโครงงาน<\/a>/);
   expect(html).not.toContain('class="discovery-path"');
   for (const view of ['home', 'detail', 'create', 'ideas', 'login']) expect(html).toContain(`data-view="${view}"`);
   for (const id of ['recipe-form', 'ingredient-form', 'rating-form', 'delete-confirm']) expect(html).toContain(`id="${id}"`);

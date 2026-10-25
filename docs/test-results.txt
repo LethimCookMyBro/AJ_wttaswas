@@ -1,0 +1,144 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> recipe-management-api-phase3@3.0.0 coverage
+> jest --runInBand --coverage --collectCoverageFrom=src/**/*.js --coverageReporters=text --coverageReporters=json-summary --coverageReporters=lcov
+
+PASS test/health.test.js
+PASS test/phase3.test.js
+PASS test/postman.test.js
+  ● Console
+
+    console.log
+      POST /api/v1/auth/login => 200
+
+      at log (tools/record-postman.js:62:15)
+
+    console.log
+      GET /api/v1/system => 200
+
+      at log (tools/record-postman.js:62:15)
+
+    console.log
+      GET /api/v1/categories => 200
+
+      at log (tools/record-postman.js:62:15)
+
+    console.log
+      GET /api/v1/ingredients => 200
+
+      at log (tools/record-postman.js:62:15)
+
+    console.log
+      GET /api/v1/recipes => 200
+
+      at log (tools/record-postman.js:62:15)
+
+    console.log
+      GET /api/v1/recipes => 400
+
+      at log (tools/record-postman.js:62:15)
+
+    console.log
+      POST /api/v1/recipes => 201
+
+      at log (tools/record-postman.js:62:15)
+
+    console.log
+      POST /api/v1/recipes/4/ingredients => 201
+
+      at log (tools/record-postman.js:62:15)
+
+    console.log
+      GET /api/v1/recipes/4 => 200
+
+      at log (tools/record-postman.js:62:15)
+
+    console.log
+      POST /api/v1/auth/login => 200
+
+      at log (tools/record-postman.js:62:15)
+
+    console.log
+      POST /api/v1/recipes => 403
+
+      at log (tools/record-postman.js:62:15)
+
+    console.log
+      POST /api/v1/recipes/4/ratings => 201
+
+      at log (tools/record-postman.js:62:15)
+
+    console.log
+      GET /api/v1/recipes/4/ratings => 200
+
+      at log (tools/record-postman.js:62:15)
+
+    console.log
+      GET /api/v1/external/meal-ideas => 200
+
+      at log (tools/record-postman.js:62:15)
+
+    console.log
+      POST /api/v1/auth/login => 200
+
+      at log (tools/record-postman.js:62:15)
+
+    console.log
+      DELETE /api/v1/recipes/4 => 200
+
+      at log (tools/record-postman.js:62:15)
+
+PASS test/api.test.js
+PASS test/openapi.test.js
+PASS test/external-api.test.js
+PASS test/demo.test.js
+PASS test/recipe-create.test.js
+PASS test/docs.test.js
+PASS test/frontend.test.js
+PASS test/quantity.test.js
+PASS test/cloud.test.js
+  ● Console
+
+    console.log
+      Initialized synthetic schema and seed in the new cloud database.
+
+      at log (tools/cloud-bootstrap.js:51:15)
+
+    console.log
+      Cloud migration ready; private account hashes initialized without replacing existing hashes; runtime user has DML privileges only.
+
+      at log (tools/cloud-bootstrap.js:74:13)
+
+    console.log
+      Cloud migration ready; private account hashes initialized without replacing existing hashes; runtime user has DML privileges only.
+
+      at log (tools/cloud-bootstrap.js:74:13)
+
+    console.log
+      Cloud schema and private accounts ready; no initialization changes.
+
+      at log (tools/cloud-bootstrap.js:43:15)
+
+PASS test/product-presentation.test.js
+------------------|---------|----------|---------|---------|-----------------------------------------------------------------------
+File              | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+------------------|---------|----------|---------|---------|-----------------------------------------------------------------------
+All files         |   93.34 |    85.79 |   98.47 |   94.21 |
+ src              |   93.16 |    83.81 |   98.33 |   94.24 |
+  db.js           |   95.23 |    69.76 |   98.83 |   99.17 | 234
+  index.js        |   91.45 |    89.04 |   96.87 |   91.56 | 33,98,113,129,166,202,291,296,301,338,348,365,406,414,443-446,484-487
+  password.js     |     100 |      100 |     100 |     100 |
+ src/services     |   94.82 |    96.49 |     100 |      94 |
+  external-api.js |   94.82 |    96.49 |     100 |      94 | 94,129-130
+------------------|---------|----------|---------|---------|-----------------------------------------------------------------------
+
+Test Suites: 13 passed, 13 total
+Tests:       184 passed, 184 total
+Snapshots:   0 total
+Time:        14.484 s
+Ran all test suites.
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.1
+npm notice To update run: npm install -g npm@12.2.1
+npm notice

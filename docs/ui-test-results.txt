@@ -1,0 +1,15 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> recipe-management-api-phase3@3.0.0 test:ui
+> node tools/check-rating-refresh.js
+
+PASS rating POST success + GET failure keeps fields disabled and truthful status
+PASS rating POST success + GET success updates displayed result
+PASS login failure, login success, role guard, logout and expired token clear session
+PASS recipe creation uses token without authorId and opens persisted result
+PASS pagination, server search/category/sort query and navigation boundaries
+PASS external UI timeout covers default 9900ms fallback budget; ordinary API retains 6000ms
+PASS atomic ingredient payload, duplicate/precision validation, double-submit and navigation race
+PASS explicit step segmentation and owner/admin/member/guest management guards
+PASS owner delete completion preserves another recipe and catalog failure offers detail retry
+PASS empty result clears all filters and preserves real featured context without guest write CTA

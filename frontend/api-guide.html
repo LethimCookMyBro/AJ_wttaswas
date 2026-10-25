@@ -1,1 +1,60 @@
-<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>นำเสนอโปรเจกต์ | ครัวแบ่งปัน</title><meta name="description" content="คู่มือนำเสนอครัวแบ่งปัน 4 ขั้น พร้อมอ่านข้อมูลจริง"><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/api-guide.css"></head><body class="guide-page" data-guide-page="overview"><a class="skip" href="#guide-main">ข้ามไปเนื้อหา</a><header class="guide-header"><a class="guide-brand" href="/">ครัวแบ่งปัน.</a><nav aria-label="เมนูหลัก"><a href="/">ใช้งานเว็บ</a><a href="/api-docs/" aria-current="page">นำเสนอโปรเจกต์</a></nav><a class="guide-reference-link" href="/api-docs/reference/">เอกสาร API</a></header><main id="guide-main" class="presentation-entry"><h1>ครัวแบ่งปัน ทำอะไร?</h1><p>เว็บค้นสูตรอาหาร ดูวัตถุดิบ และแบ่งปันสูตรกับรีวิว</p><p class="entry-intro">เริ่มพูดประโยคนี้ แล้วสาธิตตาม 4 ขั้นด้านล่าง</p><a class="button primary" href="/api-docs/start/">เริ่มขั้นที่ 1</a><ol class="entry-rail" aria-label="ลำดับนำเสนอ"><li><span>1</span>เลือกสูตร</li><li><span>2</span>ดูวัตถุดิบ</li><li><span>3</span>เพิ่มสูตร</li><li><span>4</span>อ่านกลับ</li></ol><details class="teacher-details" id="about"><summary>รายละเอียดสำหรับคำถามอาจารย์</summary><p>ครัวแบ่งปันช่วยค้นสูตร เตรียมวัตถุดิบ และแลกเปลี่ยนรีวิว เว็บไซต์เรียก API ของ Express เพื่ออ่านและเขียนข้อมูลใน MySQL</p><p>ทุกคนอ่านได้ สมาชิกให้คะแนนได้ ส่วน chef และ admin สร้างสูตรได้ เซิร์ฟเวอร์ตรวจสิทธิ์ก่อนบันทึก</p><figure><img src="/assets/api-flow.svg" width="1160" height="410" alt="หน้าเว็บส่งคำขอผ่าน API ไปยังฐานข้อมูล และรับข้อมูลกลับมาแสดง"><figcaption>แผนภาพอธิบาย ไม่ใช่สถานะสดของระบบ</figcaption></figure><a href="/api-docs/reference/">เปิดเอกสาร API ฉบับเต็ม</a></details></main><footer class="guide-footer"><a href="/">ใช้งานเว็บ</a><a href="/api-docs/reference/">เอกสาร API</a><a href="/openapi.yaml">OpenAPI</a></footer></body></html>
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>เอกสารโครงงาน | ครัวแบ่งปัน</title>
+  <meta name="description" content="เอกสาร API และหลักฐานโครงงานครัวแบ่งปัน สำหรับตรวจประกอบการสาธิตเว็บจริง">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/api-guide.css">
+</head>
+<body class="guide-page">
+  <a class="skip" href="#guide-main">ข้ามไปเนื้อหา</a>
+  <header class="guide-header">
+    <a class="guide-brand" href="/">ครัวแบ่งปัน.</a>
+    <nav aria-label="เมนูหลัก">
+      <a href="/">ใช้งานเว็บ</a>
+      <a href="/api-docs/" aria-current="page">เอกสารโครงงาน</a>
+    </nav>
+  </header>
+  <main id="guide-main" class="project-reference">
+    <h1>เอกสารโครงงาน</h1>
+    <p class="reference-intro">สาธิตการทำงานในเว็บจริง ใช้หน้านี้เปิดเอกสารและหลักฐานประกอบ</p>
+    <a class="button primary" href="/">เปิดเว็บเพื่อสาธิตจริง</a>
+    <section class="demo-reminder" aria-labelledby="demo-heading">
+      <h2 id="demo-heading">สิ่งที่จะสาธิต</h2>
+      <p>เข้าสู่ระบบด้วยบัญชี chef เพิ่มสูตรพร้อมวัตถุดิบ แล้วบันทึก เว็บจะเปิดรายละเอียดสูตรที่สร้างให้ทันที</p>
+    </section>
+    <section class="reference-section" aria-labelledby="api-heading">
+      <h2 id="api-heading">API และผลการทดสอบ</h2>
+      <ul class="reference-links">
+        <li><a href="/api-docs/reference/">Swagger: ดูและทดลอง API</a></li>
+        <li><a href="/openapi.yaml">OpenAPI Specification</a></li>
+        <li><a href="https://github.com/LethimCookMyBro/AJ_wttaswas/blob/main/postman_collection.json">Postman Collection พร้อมผลตอบกลับจากฐานทดสอบแยก</a></li>
+        <li><a href="https://github.com/LethimCookMyBro/AJ_wttaswas/blob/main/failure-scenario-results.md">ผลทดสอบเมื่อ API ภายนอกขัดข้อง</a></li>
+      </ul>
+    </section>
+    <section class="reference-section" aria-labelledby="design-heading">
+      <h2 id="design-heading">ข้อกำหนดและการออกแบบ</h2>
+      <ul class="reference-links">
+        <li><a href="https://github.com/LethimCookMyBro/AJ_wttaswas/blob/main/requirement.md">ข้อกำหนดและ Use Cases</a></li>
+        <li><a href="https://github.com/LethimCookMyBro/AJ_wttaswas/blob/main/erd.png">ERD: ความสัมพันธ์ของข้อมูล</a></li>
+        <li><a href="https://github.com/LethimCookMyBro/AJ_wttaswas/blob/main/schema.sql">โครงสร้างฐานข้อมูล (schema.sql)</a></li>
+        <li><a href="https://github.com/LethimCookMyBro/AJ_wttaswas/blob/main/microservices-design.md">แบบออกแบบ Microservices</a></li>
+        <li><a href="https://github.com/LethimCookMyBro/AJ_wttaswas/blob/main/scalability-design.md">แผนรองรับการขยายระบบ</a></li>
+        <li><a href="https://github.com/LethimCookMyBro/AJ_wttaswas/tree/main/migrations">Database migrations และคำสั่งย้อนกลับ</a></li>
+      </ul>
+      <p class="reference-note">ระบบที่รันอยู่เป็น Modular Monolith ส่วน Microservices เป็นเอกสารออกแบบ ไม่ใช่บริการแยกที่ deploy แล้ว</p>
+    </section>
+    <section class="reference-section" aria-labelledby="submission-heading">
+      <h2 id="submission-heading">หลักฐานส่งงานระยะที่ 3</h2>
+      <ul class="reference-links">
+        <li><a href="https://github.com/LethimCookMyBro/AJ_wttaswas/blob/main/coverage-report.md">Test Coverage และจุดที่ยังทดสอบไม่ครอบคลุม</a></li>
+        <li><a href="https://github.com/LethimCookMyBro/AJ_wttaswas/blob/main/clo-requirements-checklist.md">CLO6 · CLO7 · CLO8 Checklist พร้อมหลักฐาน</a></li>
+        <li><a href="https://github.com/LethimCookMyBro/AJ_wttaswas">โค้ดทั้งหมดบน GitHub</a></li>
+      </ul>
+    </section>
+  </main>
+  <footer class="guide-footer"><a href="/">กลับไปใช้งานเว็บ</a><a href="/api-docs/reference/">Swagger API</a></footer>
+</body>
+</html>

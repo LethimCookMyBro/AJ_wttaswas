@@ -17,7 +17,7 @@ Updated 25 October 2026. Food discovery comes first; developer documentation is 
 - Owner tools: only the recipe's chef or an admin sees ingredient assignment and typed-name deletion confirmation; server enforces the same authorization independently.
 - Ideas: ingredient selection → real upstream names and source/degraded labels. Fallbacks never masquerade as upstream results.
 - Login: a direct “เข้าสู่ระบบ” heading and account form. Keep concise role and 15-minute/refresh session guidance.
-- Documentation: separate presentation-first guided flow with optional API reference. Product pages do not ask ordinary visitors to understand backend terminology.
+- Documentation: a single static teacher-evidence reference page, with links to API, DB/design and test/CLO artifacts. The normal product app is the live demo; no four-step companion app or manual-ID readback. Swagger remains separate. Product pages do not ask ordinary visitors to understand backend terminology.
 
 ## Interaction and accessibility
 
@@ -35,7 +35,9 @@ The live reference review covered Apple iPhone comparison (aligned recipe facts)
 
 ## Verification status
 
-Runtime release `3ebf76ed9a5b5f15f76c6e9a99e6695b1f26fa4a` is confirmed on remote main with Railway SUCCESS. Local aggregate tests after the final stale-login-image removal and Swagger-font fix pass 212 tests in 14 suites; ten VM UI behavior scenarios passed separately. These checks are not rendered browser write tests.
+The teacher-aligned reference-page candidate is not yet deployed or browser-verified. The four-stage guide checks below are historical evidence of the previous release, not acceptance of the new candidate.
+
+Runtime release `3ebf76ed9a5b5f15f76c6e9a99e6695b1f26fa4a` is confirmed on remote main with Railway SUCCESS. That historical revision passed 212 tests in 14 suites. The new teacher-aligned candidate passes 184 tests in 13 suites and ten VM UI scenarios; measured coverage is statements93.34%, branches85.79%, functions98.47%, lines94.21% (docs/test-run-summary.json). These checks are not rendered browser write tests.
 
 Actual cloud browser review covered home/detail/guest-create/login and all four guide stages, live ingredient/review reads, stale readback clearing, empty-search reset and Swagger GET Execute 200. Main/guide were measured at 320, 390, 768, 1280 and 1440 CSS pixels using desktop resizing and zoom; expanded Swagger did not widen 320/390 layouts. This is not touch-device testing or a complete animation/accessibility audit.
 

@@ -40,7 +40,7 @@ Lowest three files by line coverage:
 | `src/services/external-api.js` | 94.00% | 94.82% | 96.49% | Defensive exhausted-loop and unexpected internal-error fallbacks |
 | `src/db.js` | 99.17% | 95.23% | 69.76% | Mock lifecycle/alternate constraint branches; real connection path not exercised by mock suite |
 
-`src/password.js` has 100% across these four measures. Machine-readable snapshot: `backend-coverage-summary.json`. High coverage does not establish production DB integration correctness.
+`src/password.js` has 100% across these four measures. Historical machine-readable snapshot: `backend-coverage-summary-preteacher.json`. Current teacher-candidate measurement is in root `coverage-report.md`, `backend-coverage-summary.json` and `test-run-summary.json`. High coverage does not establish production DB integration correctness.
 
 ## Observed failure scenarios and limitations
 

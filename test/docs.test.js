@@ -5,106 +5,69 @@ const YAML = require("yaml");
 const app = require("../src/index");
 const spec = YAML.parse(fs.readFileSync(path.join(__dirname, "../openapi.yaml"), "utf8"));
 
-describe("Visual API overview and separate tutorial", () => {
-  test.each(["/api-docs", "/api-docs/"])("%s separates the visual overview from technical instructions", async (url) => {
-    const response = await request(app).get(url);
-    expect(response.status).toBe(200);
+describe("Project evidence and real application demo entry", () => {
+  test.each(["/api-docs", "/api-docs/"])("%s is a static project reference rather than a second demo app", async (url) => {
+    const response = await request(app).get(url).expect(200);
     expect(response.text).toContain('lang="th"');
     expect(response.text).toContain('name="viewport"');
-    expect(response.text).toContain('data-guide-page="overview"');
-    expect(response.text).toContain('id="about"');
-    expect(response.text).toContain('href="/api-docs/start/"');
+    expect(response.text).toContain('<h1>เอกสารโครงงาน</h1>');
+    expect(response.text).toContain('href="/">เปิดเว็บเพื่อสาธิตจริง</a>');
     expect(response.text).toContain('href="/api-docs/reference/"');
-    expect(response.text).not.toMatch(/<pre\b/);
-    expect(response.text).toContain("ครัวแบ่งปัน ทำอะไร?");
-    expect(response.text).toContain('class="entry-rail"');
-    for (const image of response.text.matchAll(/<img\b[^>]*>/g)) {
-      expect(image[0]).toMatch(/alt="[^"]+"/);
-      expect(image[0]).toMatch(/width="\d+"/);
-      expect(image[0]).toMatch(/height="\d+"/);
-    }
-    expect(response.text).not.toMatch(/<script(?! src="\/api-guide\.js" defer><\/script>)|\son\w+=/i);
-    expect(response.headers["content-security-policy"]).toContain("script-src 'self'");
-  });
-
-  test.each(["/api-docs/start", "/api-docs/start/"])("%s teaches read, login and write with matching visuals", async (url) => {
-    const response = await request(app).get(url);
-    expect(response.status).toBe(200);
-    expect(response.text).toContain('data-guide-page="start"');
-    expect(response.text).toContain('href="/api-docs/"');
+    expect(response.text).toContain('เว็บจะเปิดรายละเอียดสูตรที่สร้างให้ทันที');
+    expect(response.text).toContain('Modular Monolith');
+    expect(response.text).not.toMatch(/<script|<input|<form|data-step|data-stage|verify-id|created-recipe-id|api-guide\.js|api-docs\/start/);
     expect(response.text).not.toMatch(/guide-(?:login|home|recipe)\.(?:jpg|png|webp)/);
-    expect(response.text).toContain('id="created-recipe-id"');
-    expect(response.text).toContain("ข้อมูลจริง");
-    expect(response.text).toContain('src="/api-guide.js" defer');
-    expect(response.text).toContain('id="presentation-stages"');
-    expect([...response.text.matchAll(/data-stage="[1-4]"/g)]).toHaveLength(4);
-    expect(response.text).toContain('href="/#create"');
-    expect(response.text).not.toMatch(/<input[^>]*type="password"/i);
-    expect(response.text).toContain("15 นาที");
-    expect(response.text).toContain("ไม่ต้องใส่คำว่า Bearer");
-    expect(response.text).toContain('id="request-log"');
-    expect(response.text).not.toMatch(/<script(?! src="\/api-guide\.js" defer><\/script>)|\son\w+=/i);
     expect(response.headers["content-security-policy"]).toContain("script-src 'self'");
   });
 
-  test("the task reference covers exactly the canonical operations", async () => {
-    const page = (await request(app).get("/api-docs/start/")).text;
-    const documented = [...page.matchAll(/data-method="(GET|POST|DELETE)" data-path="([^"]+)"/g)].map((match) => `${match[1]} ${match[2]}`).sort();
-    const expected = Object.entries(spec.paths).flatMap(([url, item]) => ["get", "post", "delete"].filter((method) => item[method]).map((method) => `${method.toUpperCase()} ${url}`)).sort();
-    expect(documented).toEqual(expected);
-    expect(documented).toHaveLength(12);
-    for (const item of Object.values(spec.paths)) {
-      for (const method of ["get", "post", "delete"]) {
-        if (item[method]) expect(page).toContain(`/api-docs/reference/#/${item[method].tags[0]}/${item[method].operationId}`);
-      }
+  test.each(["/api-docs/start", "/api-docs/start/", "/api-start.html"])("old walkthrough URL %s redirects to project reference", async (url) => {
+    const response = await request(app).get(url).expect(302);
+    expect(response.headers.location).toBe('/api-docs/');
+  });
+
+  test('dead companion code is removed, not hidden behind a new landing page', async () => {
+    for (const file of ['api-guide.js', 'api-start.html']) {
+      expect(fs.existsSync(path.join(__dirname, '../frontend', file))).toBe(false);
+    }
+    await request(app).get('/api-guide.js').expect(404);
+  });
+
+  test('every linked repository evidence file exists in the integrated checkout', async () => {
+    const page = (await request(app).get('/api-docs/')).text;
+    const links = [...page.matchAll(/href="https:\/\/github\.com\/LethimCookMyBro\/AJ_wttaswas\/(blob|tree)\/main\/([^"#]+)"/g)];
+    expect(links.length).toBeGreaterThanOrEqual(10);
+    for (const [, type, relative] of links) {
+      const target = path.join(__dirname, '..', relative);
+      expect({ relative, exists: fs.existsSync(target) }).toEqual({ relative, exists: true });
+      expect(type === 'tree' ? fs.statSync(target).isDirectory() : fs.statSync(target).isFile()).toBe(true);
+    }
+    for (const required of ['coverage-report.md', 'clo-requirements-checklist.md', 'requirement.md', 'schema.sql', 'erd.png', 'postman_collection.json', 'failure-scenario-results.md', 'microservices-design.md', 'scalability-design.md']) expect(page).toContain(required);
+  });
+
+  test('local links and assets resolve, anchors are unique and valid', async () => {
+    const html = fs.readFileSync(path.join(__dirname, '../frontend/api-guide.html'), 'utf8');
+    const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const [, url] of html.matchAll(/(?:href|src)="([^"]+)"/g)) {
+      if (url.startsWith('#')) expect(ids).toContain(url.slice(1));
+      else if (url.startsWith('/')) await request(app).get(url.split('#')[0]).expect(200);
     }
   });
 
-  test("guide links, local anchors, and asset paths resolve", async () => {
-    const pages = ["api-guide.html", "api-start.html"];
-    const destinations = new Set();
-    for (const file of pages) {
-      const html = fs.readFileSync(path.join(__dirname, "../frontend", file), "utf8");
-      const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
-      expect(new Set(ids).size).toBe(ids.length);
-      for (const [, url] of html.matchAll(/(?:href|src)="([^"]+)"/g)) {
-        if (url.startsWith("#")) expect(ids).toContain(url.slice(1));
-        else if (url.startsWith("/")) destinations.add(url.split("#")[0]);
-      }
-    }
-    for (const url of destinations) {
-      const response = await request(app).get(url);
-      expect({ url, status: response.status }).toEqual({ url, status: 200 });
-      if (/\/guide-(home|recipe|login)\.jpg$/.test(url)) {
-        expect(response.headers["content-type"]).toMatch(/image\/jpeg/);
-        expect(response.body[0]).toBe(0xff);
-        expect(response.body[1]).toBe(0xd8);
-      }
-    }
+  test('main navigation names project documents, not a separate presentation mode', async () => {
+    const page = (await request(app).get('/')).text;
+    expect(page).toContain('href="/api-docs/">เอกสารโครงงาน');
+    expect(page).not.toMatch(/href="\/api-docs\/">นำเสนอ/);
   });
 
-  test("beginner flow uses native keyboard-accessible disclosures and no font arrows", async () => {
-    for (const route of ["/api-docs/", "/api-docs/start/"]) {
-      const html = (await request(app).get(route)).text;
-      expect(html).not.toMatch(/[↗↓←]/);
-      expect(html).toContain('<details class="teacher-details"');
-    }
-    const overview = (await request(app).get("/api-docs/")).text;
-    expect(overview).toContain('ไม่ใช่สถานะสด');
-    const start = (await request(app).get("/api-docs/start/")).text;
-    expect(start).toContain('id="verify-form"');
-    expect(start).toContain('อ่านกลับ เพื่อยืนยันผล');
-    expect(start).not.toMatch(/<details[^>]*request-inspector[^>]*\bopen\b/);
+  test('reference styling is restrained, responsive, and scoped away from product layout', async () => {
+    const response = await request(app).get('/api-guide.css').expect(200);
+    expect(response.headers['content-type']).toMatch(/text\/css/);
+    expect(response.text).toContain('var(--accent)');
+    expect(response.text).toContain('@media');
+    expect(response.text).toContain('prefers-reduced-motion');
+    expect(response.text).not.toMatch(/step-navigation|step-cues|recipe-options|entry-rail|presentation-stages/);
   });
-
-  test("guide stylesheet is served and uses the site's existing design tokens", async () => {
-    const response = await request(app).get("/api-guide.css");
-    expect(response.status).toBe(200);
-    expect(response.headers["content-type"]).toMatch(/text\/css/);
-    expect(response.text).toContain("var(--accent)");
-    expect(response.text).toContain("@media");
-  });
-
   test("the explanatory flow diagram is served without scripts or external resources", async () => {
     const response = await request(app).get("/assets/api-flow.svg");
     expect(response.status).toBe(200);
@@ -131,20 +94,15 @@ describe("Visual API overview and separate tutorial", () => {
     }
   });
 
-  test("requested footer notices are removed while useful navigation remains", async () => {
-    for (const url of ["/", "/api-docs/", "/api-docs/start/"]) {
-      const response = await request(app).get(url);
-      expect(response.status).toBe(200);
+  test("requested footer notices stay removed while useful navigation remains", async () => {
+    for (const url of ["/", "/api-docs/"]) {
+      const response = await request(app).get(url).expect(200);
       const footer = response.text.slice(response.text.indexOf("<footer"));
       expect(footer).toContain("href=");
-      expect(footer).not.toMatch(/storage-notice|system-status|demo-notice|project-note|โครงงาน|67160003|ภาพหน้าจอ|ภาพอาหาร|สร้างด้วย AI/);
+      expect(footer).not.toMatch(/storage-notice|system-status|demo-notice|project-note|67160003|ภาพหน้าจอ|ภาพอาหาร|สร้างด้วย AI/);
     }
-    expect((await request(app).get("/")).text).toContain('href="/api-docs/"');
     const script = (await request(app).get("/app.js")).text;
     expect(script).not.toMatch(/storage-notice|system-status|api\('\/system'\)/);
-    const css = (await request(app).get("/styles.css")).text;
-    expect(css).not.toMatch(/\.(?:demo-notice|project-note)\b/);
-    expect(css).not.toMatch(/\.footer-top(?: p|>a:last-child)\{[^}]*font-size:(?:9|10|11|12|13)px/);
   });
 });
 
@@ -156,14 +114,6 @@ test('Swagger narrow response tables are locally contained rather than hiding pa
   expect(css.text).not.toMatch(/(?:html|body)\s*\{[^}]*overflow-x:hidden/);
 });
 
-test('presentation pages use the live app rather than stale UI screenshots', async () => {
-  for (const url of ['/api-docs/', '/api-docs/start/']) {
-    const response = await request(app).get(url).expect(200);
-    expect(response.text).not.toMatch(/guide-(?:login|home|recipe)\.(?:jpg|png|webp)/);
-    expect(response.text).toContain('/assets/api-flow.svg');
-  }
-  expect((await request(app).get('/api-docs/start/')).text).toContain('id="create-app-link" href="/#create"');
-});
 test('Swagger reference has self-contained Thai fonts without depending on product CSS', async () => {
   const page = await request(app).get('/api-docs/reference/').expect(200);
   expect(page.text).toContain('/api-guide.css');

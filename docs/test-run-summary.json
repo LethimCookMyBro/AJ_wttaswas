@@ -1,0 +1,73 @@
+{
+  "completedAt": "2026-10-25T06:01:06Z",
+  "timestampSource": "release reviewer run completion; logs retain command/results",
+  "candidate": "teacher-aligned static evidence page; deployment not asserted by this report",
+  "runs": [
+    {
+      "command": "npm run coverage",
+      "testsPassed": 184,
+      "testsTotal": 184,
+      "suitesPassed": 13,
+      "suitesTotal": 13,
+      "result": "PASS",
+      "log": "docs/test-results.txt",
+      "sha256": "726812a602d1ec20a0611b73dcad97e87c30c5f8a9dd33aaba2d9df7b8f1b6ca",
+      "logNormalization": "Trailing whitespace removed; command, results and coverage values unchanged."
+    },
+    {
+      "command": "npm run test:ui",
+      "scenariosPassed": 10,
+      "result": "PASS",
+      "log": "docs/ui-test-results.txt",
+      "sha256": "eb5514c5331da44648aa84e7af4635cb2a49a3185b0a5ff3870d874c9a7b54b7"
+    },
+    {
+      "command": "node docs/check-postman-operation-coverage.js",
+      "operationsCovered": 12,
+      "operationsTotal": 12,
+      "observedExamples": 16,
+      "result": "PASS",
+      "report": "docs/postman-operation-coverage.json"
+    }
+  ],
+  "coverage": {
+    "lines": {
+      "total": 432,
+      "covered": 407,
+      "skipped": 0,
+      "pct": 94.21
+    },
+    "statements": {
+      "total": 541,
+      "covered": 505,
+      "skipped": 0,
+      "pct": 93.34
+    },
+    "functions": {
+      "total": 131,
+      "covered": 129,
+      "skipped": 0,
+      "pct": 98.47
+    },
+    "branches": {
+      "total": 366,
+      "covered": 314,
+      "skipped": 0,
+      "pct": 85.79
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "coverageFile": "docs/backend-coverage-summary.json",
+  "scope": [
+    "Jest src/**/*.js coverage uses database test doubles; not production DB or browser coverage.",
+    "VM UI tests are not authenticated browser write E2E.",
+    "Prior isolated MariaDB11.8.6 integration14groups separate; not rerun by npm run coverage.",
+    "Prior212tests14suites belonged to removed four-step guide revision;184tests13suites is current candidate, not failing/deleted evidence.",
+    "Configured Railway mysql:8/health/public reads do not establish exact patch version or full production constraints/write testing."
+  ]
+}
