@@ -1,44 +1,41 @@
-# ครัวแบ่งปัน
+# ครัวแบ่งปัน: Kitchen editorial system
 
-## ทิศทางใหม่
+Updated 25 October 2026. Food discovery comes first; developer documentation is a separate, clearly named path. Preserve Express/MySQL, local Thai fonts, real API records, and the existing hash routes. No new frontend framework, fabricated reviews, or fake user statistics.
 
-แอปค้นสูตรอาหารภาษาไทยที่เปิดมาแล้วเห็นอาหารก่อนข้อมูลเทคนิค ใช้พื้นที่ทำงานสีอ่อนกับ hero สี charcoal และปุ่มสีส้ม รวมความสบายตาของหน้า light ความคมของส่วน dark และภาพอาหารขนาดใหญ่ตามความต้องการล่าสุดของผู้ใช้ ไม่เพิ่ม theme toggle หรือเมนูที่ยังไม่มีระบบรองรับ
+## Design tokens
 
-UI/UX Pro Max ค้นด้วย `recipe discovery photography modern` รอบแรกให้ motion-driven ที่ไม่เหมาะกับแอปนี้ จึงค้นให้แคบเป็น `food recipe editorial` ผลรอบสองเป็น flat design ใช้เส้นแบ่งง่าย พื้นสีทึบ และภาพอาหาร แทน scroll effects และ testimonial ที่ไม่มีข้อมูลจริง
+- Paper `#f8f5ef`, surface `#fffdf9`, ink `#252b25`, muted `#62675d`.
+- Forest hero/action `#243b32`, terracotta accent `#aa3d20`, warm hero button `#f2a273`.
+- Rules `#dddcd2`, soft cooking panel `#e7eddf`.
+- Local Noto Sans Thai 400/600/700, `font-display: swap`. Body 16px; metadata 12–14px; headings scale by viewport. Food imagery has reserved aspect ratios.
+- Mostly 4/8px spacing increments; crisp 5px controls and 8px image corners. Food remains the visual anchor, not decorative dashboard cards.
 
-## สีและตัวอักษร
+## Page hierarchy
 
-- พื้นหลัก `#fafafa` และพื้นการ์ด `#ffffff`
-- ตัวอักษร `#20262c` และข้อความรอง `#626970`
-- Hero `#171d23` กับข้อความอ่อน `#c4c9cd`
-- ปุ่มหลัก `#c54a25` กับตัวอักษรขาว ปุ่ม hero `#e8683b` กับตัวอักษรเข้ม
-- Border `#e2e4e5` และพื้นประกอบสีอ่อน `#fff1e9`
-- Noto Sans Thai 400, 600, 700 แบบ local TrueType ใน `/assets` พร้อม `font-display: swap`
-- ระยะพื้นฐาน 4/8 px การ์ด radius 16 px ปุ่ม 10 px ไม่ใช้ gradients, glass, emoji, fake avatar หรือคะแนนที่แต่งขึ้น
+- Home: editorial hero, API-backed featured recipe, three explicit paths, category/search/difficulty/sort, paged real recipe cards, meal-idea next step.
+- Detail: actual recipe metadata, ingredients with native checkboxes, explicitly numbered/newline cooking steps, ratings. Plain instructions stay one step rather than inventing missing content.
+- Create: recipe basics → ingredient rows → method. One POST writes the recipe and optional ingredients atomically. Failed saves preserve entered data. Successful saves open the returned ID only if the user has not navigated away.
+- Owner tools: only the recipe's chef or an admin sees ingredient assignment and typed-name deletion confirmation; server enforces the same authorization independently.
+- Ideas: ingredient examples, loading/empty/error states, real upstream result names with source/degraded labels. Fallbacks never masquerade as upstream results.
+- Login: server-authenticated identity, role explanations, token in memory only. Guest/member restrictions are explained at the point of action.
+- Documentation: overview → GET-only walkthrough → existing Swagger reference. Writes happen through authenticated app forms or Swagger, not a hidden guide script.
 
-## โครงสร้างและการนำทาง
+## Interaction and accessibility
 
-- `#recipes` เป็นหน้าแรก มี hero สองส่วน รายการสูตรแบบภาพสามคอลัมน์ หมวดหมู่ และค้นหาชื่อจากรายการที่โหลดแล้ว
-- `#recipe/ID` เป็นหน้ารายละเอียด มีรูปประกอบ ข้อมูลจริงจาก API วัตถุดิบ วิธีทำ รีวิวและแบบฟอร์มให้คะแนน
-- `#create` เป็นฟอร์มเพิ่มสูตรแยกหน้า กรอกข้อมูลสูตรก่อนวิธีทำ บันทึกสำเร็จไปหน้าสูตรใหม่และแสดงข้อความยืนยันจาก POST จริง
-- `#ideas` เป็นการค้น TheMealDB จากวัตถุดิบ แสดงสถานะ loading, empty, error และ degraded fallback ตามผล API
-- ลิงก์กลับและ browser back ใช้ hash history ไม่ใช้ modal หรือ focus trap
-- เมนู API docs และ OpenAPI ไปปลายทางเดิม
+Native links, forms, labels, buttons and checkboxes remain the primary interaction model. Hash navigation preserves browser back; status messages use live regions. Request counters prevent stale reads. Save/owner mutations reject duplicate submissions. Numbered steps and ingredient checks support cooking rather than ornamental motion.
 
-Model the Domain ทำให้หน้าแสดงผลมาจาก URL hash เพียงแหล่งเดียว State เก็บ recipes, selectedId, detailRequest, filter, search และ successId เพื่อคัดผลคำขอเก่าและแสดงข้อความยืนยันเฉพาะสูตรที่เพิ่งสร้าง Laziness Protocol ทำให้ใช้ native HTML และ API เดิม ไม่เพิ่ม framework, dependency, ระบบบัญชี, bookmark หรือฟอร์มอัปโหลดภาพ
+Inline SVG replaces unsupported arrow glyphs. Hover movement is brief and restrained; reduced-motion removes animations/transitions. Responsive rules collapse recipe, detail, owner and ingredient layouts, and wrap controls at narrow widths. All user/API content is inserted with `textContent`, not HTML interpolation.
 
-## ภาพและขอบเขตข้อมูล
+## Image truthfulness
 
-ภาพใน `/assets/pad-krapao.webp`, `/assets/mango-rice.webp`, `/assets/pepper-chicken.webp` และ `/assets/fried-rice.webp` เป็นภาพประกอบที่สร้างด้วย AI ไม่ใช่หลักฐานว่ามีคนทำสูตรจริง สูตรตั้งต้นสามสูตรจับคู่ภาพตาม ID สูตรอื่นใช้ภาพประกอบทั่วไปพร้อมป้าย ไม่อ้างว่าเป็นภาพของสูตรที่ผู้ใช้เพิ่ม
+The four existing food WebP files are AI-created illustrations, not evidence that a user cooked a recipe. Existing seed recipes have known illustration mapping. Other recipes receive a generic image and visible illustration label. No generated image is presented as a user upload.
 
-หน้า footer อ่าน storage จาก API และแสดง mysql หรือ in-memory ตามที่รันจริง. หน้า #login แยกงานยืนยันตัวตนจากหน้าแรกและเก็บ token ใน memory. ฟอร์มผูกตัวตนจากบัญชีที่ server ตรวจแล้ว ไม่ใช้ authorId/userId ตายตัว. การแสดง bounded contexts ไม่ได้อ้างว่า deploy เป็นหลายบริการ.
+## Reference adaptation
 
-## สถานะและการเข้าถึง
+The live reference review covered Apple iPhone comparison (aligned recipe facts), Stripe Payments (clear primary/secondary paths), Stripe Checkout docs (task-led progression), Linear start guide (reading width and next step), and Vercel deployments docs (separate stages). Adapt patterns, not brand styling. Avoid megamenus, dense desktop sidebars, oversized blank marketing sections, and decorative scroll effects.
 
-Loading และ error ประกาศผ่าน `role=status` ปิดปุ่มระหว่างคำขอ เก็บข้อมูลฟอร์มไว้เมื่อบันทึกไม่สำเร็จ ข้อมูลที่แสดงจาก API ใช้ `textContent` ไม่ใช้ `innerHTML` การสร้างสูตรตรวจช่องว่างและขนาด UTF-8 10 KB ร่วมกับ native constraint validation
+## Verification status
 
-คำขอรายละเอียดใช้ตัวนับ ไม่แสดงผลล่าช้าทับสูตรใหม่ เปลี่ยนหน้าแล้ว focus ที่ h1 เมนูใช้ `aria-current` หมวดหมู่ใช้ `aria-pressed` ทุกช่องมี label และ error/status อ่านได้ รายการภาพสงวนสัดส่วนเพื่อลด layout shift หน้าเล็กเปลี่ยนเป็นหนึ่งคอลัมน์ ปุ่มและช่องกรอกอย่างน้อย 44 px มี focus ring และปิด transition เมื่อ `prefers-reduced-motion`
+Nine frontend behavior scenarios pass, including auth/role/expiry, rating refresh failure, atomic ingredient payload, duplicate/precision validation, double-submit suppression and late-write navigation. Twenty guide tests cover sequence/races and network/schema failures. These are automated behavior tests, not rendered UI evidence.
 
-## การตรวจ
-
-UI regression6กลุ่มผ่าน รวม auth, role, expiry, server-side list และ truthful refresh. การตรวจ CUA กับMySQLจริงและภาพ desktop/mobile อยู่ใน .transaction/final-ui-review.json. ไม่ถือ syntax check หรือ test ที่จำลอง DOM แทน rendered UI หรือ human usability study.
+After-change browser screenshots and viewport inspection are pending: headless Chromium could not launch in this execution environment; cloud browser could not reach the local server. Existing screenshots are explicitly before-change evidence. Do not describe the new design as visually verified until the deployment/preview is inspected.

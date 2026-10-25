@@ -1,0 +1,47 @@
+{
+  "completed": false,
+  "failure": "The validation function is expected to return \"true\". Received false\n\nCaught error:\n\nError: CONSTRAINT `ratings.rating_score` failed for `recipe_api`.`ratings`",
+  "database": "11.8.6-MariaDB-0+deb13u1 from Debian",
+  "exactMySQL8": false,
+  "source": "Official signed Debian snapshot packages, extracted to /tmp; no system install",
+  "scope": "Disposable local loopback process only; no production connection",
+  "results": [
+    {
+      "name": "official schema and seed execute on real MariaDB",
+      "result": "PASS",
+      "detail": "11.8.6-MariaDB-0+deb13u1 from Debian"
+    },
+    {
+      "name": "migration up/up/down/up preserves all six business tables",
+      "result": "PASS"
+    },
+    {
+      "name": "password login for chef, member and admin",
+      "result": "PASS"
+    },
+    {
+      "name": "anonymous, member and forged-author atomic creates rejected",
+      "result": "PASS"
+    },
+    {
+      "name": "atomic recipe and decimal ingredients committed; author_id returned",
+      "result": "PASS"
+    },
+    {
+      "name": "unknown final ingredient rolls back recipe and both earlier ingredient inserts",
+      "result": "PASS"
+    },
+    {
+      "name": "duplicate ingredients and precision loss rejected without DB changes",
+      "result": "PASS"
+    },
+    {
+      "name": "concurrent successful and failed transactions isolated; foreign-owner writes forbidden",
+      "result": "PASS"
+    },
+    {
+      "name": "disposable server terminated; no DB listener retained",
+      "result": "PASS"
+    }
+  ]
+}

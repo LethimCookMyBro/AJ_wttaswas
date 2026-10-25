@@ -1,0 +1,68 @@
+{
+  "completed": true,
+  "failure": null,
+  "database": "11.8.6-MariaDB-0+deb13u1 from Debian",
+  "exactMySQL8": false,
+  "source": "Official signed Debian snapshot packages, extracted to /tmp; no system install",
+  "scope": "Disposable local loopback process only; no production connection",
+  "results": [
+    {
+      "name": "official schema and seed execute on real MariaDB",
+      "result": "PASS",
+      "detail": "11.8.6-MariaDB-0+deb13u1 from Debian"
+    },
+    {
+      "name": "migration up/up/down/up preserves all six business tables",
+      "result": "PASS"
+    },
+    {
+      "name": "password login for chef, member and admin",
+      "result": "PASS"
+    },
+    {
+      "name": "anonymous, member and forged-author atomic creates rejected",
+      "result": "PASS"
+    },
+    {
+      "name": "atomic recipe and decimal ingredients committed; author_id returned",
+      "result": "PASS"
+    },
+    {
+      "name": "unknown final ingredient rolls back recipe and both earlier ingredient inserts",
+      "result": "PASS"
+    },
+    {
+      "name": "duplicate ingredients and precision loss rejected without DB changes",
+      "result": "PASS"
+    },
+    {
+      "name": "concurrent successful and failed transactions isolated; foreign-owner writes forbidden",
+      "result": "PASS"
+    },
+    {
+      "name": "review uniqueness, score CHECK and ingredient FK enforced on real DB",
+      "result": "PASS"
+    },
+    {
+      "name": "owner delete cascades ingredients/reviews; original six business tables preserved",
+      "result": "PASS"
+    },
+    {
+      "name": "existing real-db-smoke.js passes against isolated MariaDB",
+      "result": "PASS",
+      "detail": "Not exact MySQL 8"
+    },
+    {
+      "name": "health probe succeeds against real database",
+      "result": "PASS"
+    },
+    {
+      "name": "15 real MariaDB Postman request/response examples captured; secrets redacted; fixture cleanup verified",
+      "result": "PASS"
+    },
+    {
+      "name": "disposable server terminated; no DB listener retained",
+      "result": "PASS"
+    }
+  ]
+}

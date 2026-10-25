@@ -8,6 +8,7 @@ const source = fs.readFileSync(sourcePath, 'utf8').replace(/start\(\);\s*$/, '')
 function node(id = '') {
   return {
     id, textContent: '', value: '', hidden: false, disabled: false,
+    get firstChild() { return this.children[0]; },
     dataset: {}, children: [], handlers: {},
     classList: { toggle() {} }, setAttribute() {}, removeAttribute() {},
     append(...children) { this.children.push(...children); },
@@ -21,7 +22,7 @@ function harness(respond) {
   const nodes = new Map(), requests = [], timeouts = [];
   const document = {
     title: '', getElementById(id) { if (!nodes.has(id)) nodes.set(id, node(id)); return nodes.get(id); },
-    createElement: node, createTextNode: (textContent) => ({ textContent }),
+    createElement: node, createElementNS: (_ns, tag) => node(tag), createTextNode: (textContent) => ({ textContent }),
     querySelector() { return node(); }, querySelectorAll() { return []; },
   };
   const context = vm.createContext({
@@ -139,4 +140,71 @@ async function timeoutBudget() {
   assert.deepEqual(h.timeouts, [6000, 12000], 'external UI must outlast default three attempts plus backoff');
   console.log('PASS external UI timeout covers default 9900ms fallback budget; ordinary API retains 6000ms');
 }
-(async () => { await rating(true); await rating(false); await auth(); await create(); await pagination(); await timeoutBudget(); })().catch((error) => { console.error(error); process.exitCode = 1; });
+async function ingredientWorkflow() {
+  let resolvePost;
+  const h = harness((url, options) => options.method === 'POST'
+    ? new Promise((resolve) => { resolvePost = resolve; })
+    : ok([], { pagination: { page: 1, limit: 9, total: 0, totalPages: 0 } }));
+  h.run(session);
+  const rows = [{ ingredientId: '1', quantity: '2.5', unit: 'กรัม' }];
+  h.get('ingredient-rows').querySelectorAll = () => rows.map((row) => ({
+    querySelector: (selector) => ({ value: row[selector.includes('ingredient') ? 'ingredientId' : selector.includes('quantity') ? 'quantity' : 'unit'] }),
+  }));
+  for (const [id, value] of Object.entries({ name: 'atomic fixture', category: '1', steps: 'test steps', minutes: '10', difficulty: 'easy' })) h.get(id).value = value;
+  rows.push({ ...rows[0] });
+  await h.submit('recipe-form');
+  assert.equal(h.requests.length, 0, 'duplicate ingredients are rejected before network');
+  assert.match(h.get('create-status').textContent, /ซ้ำ/);
+  rows.pop(); rows[0].quantity = '1.234';
+  await h.submit('recipe-form');
+  assert.equal(h.requests.length, 0, 'precision mismatch is rejected before network');
+  rows[0].quantity = '2.5';
+  const pending = h.submit('recipe-form');
+  await h.submit('recipe-form');
+  assert.equal(h.requests.length, 1, 'double submit sends one atomic write');
+  assert.equal(h.get('create-fields').disabled, true);
+  assert.deepEqual(JSON.parse(h.requests[0].body).ingredients, [{ ingredientId: 1, quantity: 2.5, unit: 'กรัม' }]);
+  h.run("location.hash = '#ideas'");
+  resolvePost(ok({ id: 11, name: 'atomic fixture' }));
+  await pending;
+  assert.equal(h.run('location.hash'), '#ideas', 'late write must not steal navigation');
+  assert.match(h.get('app-notice').textContent, /atomic fixture/);
+  assert.equal(h.get('create-fields').disabled, false);
+  console.log('PASS atomic ingredient payload, duplicate/precision validation, double-submit and navigation race');
+}
+async function detailSemantics() {
+  const h = harness(() => ok([]));
+  h.run("renderInstructions('1. เตรียมของ 2. ผัด 3. เสิร์ฟ')");
+  assert.deepEqual(h.get('instructions').children.map((item) => item.textContent), ['เตรียมของ', 'ผัด', 'เสิร์ฟ']);
+  h.run("renderInstructions('คำอธิบายธรรมดา ไม่มีเลขขั้นตอน')");
+  assert.equal(h.get('instructions').children.length, 1, 'plain content is never fabricated into extra steps');
+  h.run(`${session} state.currentRecipe = { author_id: 1 };`);
+  assert.equal(h.run('canManageRecipe()'), true);
+  h.run('state.currentRecipe.author_id = 2');
+  assert.equal(h.run('canManageRecipe()'), false);
+  h.run("state.session.user.role = 'admin'");
+  assert.equal(h.run('canManageRecipe()'), true);
+  h.run("state.session.user.role = 'member'; state.currentRecipe.author_id = 1");
+  assert.equal(h.run('canManageRecipe()'), false);
+  h.run('state.session = null');
+  assert.equal(h.run('canManageRecipe()'), false);
+  console.log('PASS explicit step segmentation and owner/admin/member/guest management guards');
+}
+async function ownerNavigationRace() {
+  let finishDelete;
+  const h = harness((url, options) => options.method === 'DELETE' ? new Promise((resolve) => { finishDelete = resolve; }) : ok([], { pagination: { page: 1, limit: 9, total: 0, totalPages: 0 } }));
+  h.run(`${session} state.selectedId = 3; state.detailRequest = 1; state.currentRecipe = { id: 3, author_id: 1, name: 'recipe A' }; location.hash = '#recipe/3';`);
+  h.get('delete-name').value = 'recipe A';
+  const pending = h.get('delete-recipe').handlers.click();
+  h.run("state.selectedId = 4; state.detailRequest = 2; state.currentRecipe = { id: 4, author_id: 1, name: 'recipe B' }; location.hash = '#recipe/4';");
+  finishDelete(ok({})); await pending;
+  assert.equal(h.run('state.currentRecipe.id'), 4);
+  assert.equal(h.run('canManageRecipe()'), true);
+  assert.equal(h.run('location.hash'), '#recipe/4');
+  const catalog = harness(() => denied(503, 'catalog unavailable'));
+  await catalog.run('loadCatalog()');
+  assert.equal(catalog.get('retry-detail-catalog').hidden, false);
+  assert.match(catalog.get('detail-catalog-status').textContent, /catalog unavailable/);
+  console.log('PASS owner delete completion preserves another recipe and catalog failure offers detail retry');
+}
+(async () => { await rating(true); await rating(false); await auth(); await create(); await pagination(); await timeoutBudget(); await ingredientWorkflow(); await detailSemantics(); await ownerNavigationRace(); })().catch((error) => { console.error(error); process.exitCode = 1; });

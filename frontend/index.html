@@ -1,21 +1,450 @@
 <!doctype html>
 <html lang="th">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#171d23"><meta name="description" content="ค้นพบสูตรอาหาร อ่านวิธีทำ และแบ่งปันเมนูจากครัวของคุณ"><title>ครัวแบ่งปัน | มื้อนี้ทำอะไรดี?</title>
-<link rel="preload" href="/assets/noto-thai-400.ttf" as="font" type="font/ttf" crossorigin><link rel="stylesheet" href="/styles.css"><script src="/app.js" defer></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#243b32">
+<meta name="description" content="ค้นพบสูตรอาหาร อ่านวิธีทำ และแบ่งปันเมนูจากครัวของคุณ">
+<title>ครัวแบ่งปัน | มื้อนี้ทำอะไรดี?</title>
+<link rel="preload" href="/assets/noto-thai-400.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="/styles.css">
+<script src="/app.js" defer>
+</script>
 </head>
 <body>
 <a class="skip" href="#main">ข้ามไปเนื้อหา</a>
-<header class="masthead"><a class="brand" href="#recipes" aria-label="ครัวแบ่งปัน หน้าแรก"><span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M5 12h14l-1.2 7H6.2L5 12Z"/><path d="M3 12h18M8 8c-2-2 2-3 0-5m5 5c-2-2 2-3 0-5m4 5c-2-2 2-3 0-5" stroke-linecap="round"/></svg></span>ครัวแบ่งปัน<span class="brand-dot">.</span></a><nav aria-label="เมนูหลัก"><a href="#recipes" data-nav="home" aria-current="page">สูตรอาหาร</a><a href="#ideas" data-nav="ideas">ไอเดียเมนู</a><a class="docs-link" href="/api-docs/">API docs ↗</a></nav><div class="session-controls"><span id="session-user" class="session-user" hidden></span><a id="login-link" class="session-link" href="#login" data-login-return>เข้าสู่ระบบ</a><button id="logout" class="session-link" type="button" hidden>ออกจากระบบ</button></div><a class="button primary nav-create" href="#create" data-nav="create"><span aria-hidden="true">+</span> เพิ่มสูตร</a></header>
-<main id="main" tabindex="-1">
-<div id="home-view" data-view="home">
-<section class="hero" aria-labelledby="page-title"><div class="hero-copy"><h1 id="page-title" tabindex="-1">มื้อนี้<br>ทำอะไรดี<span>?</span></h1><p>เปลี่ยนคำถามเดิม ๆ เป็นจานโปรดจานใหม่<br>ค้นสูตรที่ใช่ แล้วมาเข้าครัวด้วยกัน</p><a class="button hero-button" href="#collection">หาสูตรที่อยากทำ <span aria-hidden="true">→</span></a><span class="hero-note">สูตรจากคนทำอาหาร ถึงคนที่อยากลองทำ</span></div><div class="hero-visual"><img src="/assets/pad-krapao.webp" alt="ภาพประกอบผัดกะเพราหมูสับกับข้าวและไข่ดาว" width="900" height="900" fetchpriority="high"><a class="hero-recipe" href="#recipe/1"><span><small>ลองจานนี้ไหม?</small><strong>กะเพราหมูสับไข่ดาว</strong><span class="hero-recipe-meta">15 นาที · ทำง่าย</span></span><span class="round-arrow" aria-hidden="true">↗</span></a></div></section>
-<section id="recipes" class="collection" aria-labelledby="recipes-heading"><div id="collection" class="section-head"><div><p class="section-kicker">เลือกสูตร แล้วลงมือทำ</p><h2 id="recipes-heading">อร่อยได้ ในครัวคุณ</h2></div><button id="reload" class="text-button" type="button"><span aria-hidden="true">↻</span> โหลดใหม่</button></div><div class="collection-controls"><div id="category-chips" class="category-chips" role="group" aria-label="กรองตามหมวดหมู่"><button class="chip active" type="button" data-category="" aria-pressed="true">ทั้งหมด</button></div><div class="recipe-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><label class="sr-only" for="recipe-search">ค้นหาชื่อสูตรทั้งหมด</label><input id="recipe-search" type="search" placeholder="ค้นหาสูตรอาหาร" maxlength="150"></div></div><label class="sr-only" for="category-filter">เลือกหมวดหมู่</label><select id="category-filter" class="sr-only" tabindex="-1" aria-hidden="true"><option value="">ทุกหมวดหมู่</option></select><div class="sort-control"><label for="recipe-sort">เรียงสูตร</label><select id="recipe-sort"><option value="id_asc">สูตรแรกก่อน</option><option value="id_desc">สูตรใหม่ก่อน</option><option value="name_asc">ชื่อสูตร ก ถึง ฮ</option><option value="cook_time_asc">ใช้เวลาน้อยก่อน</option></select></div><p id="list-status" class="status list-status" role="status" aria-live="polite">กำลังโหลดสูตรอาหาร...</p><ul id="recipe-list" class="recipe-grid"></ul><nav class="pagination" aria-label="หน้ารายการสูตร"><button id="previous-page" class="button secondary" type="button" disabled>← ก่อนหน้า</button><span id="page-status" role="status" aria-live="polite"></span><button id="next-page" class="button secondary" type="button" disabled>ถัดไป →</button></nav><div class="ideas-callout"><span class="callout-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 18h6m-5 3h4m-6-9a6 6 0 1 1 8 0c-1.5 1-2 2-2 3h-4c0-1-.5-2-2-3Z"/></svg></span><div><h3>มีวัตถุดิบแล้ว แต่ยังคิดเมนูไม่ออก?</h3><p>ลองค้นหาไอเดียเมนูจากวัตถุดิบที่มี</p></div><a class="button secondary" href="#ideas">หาไอเดียเมนู <span aria-hidden="true">↗</span></a></div></section>
+<header class="masthead">
+<a class="brand" href="#recipes" aria-label="ครัวแบ่งปัน หน้าแรก">
+<span class="brand-mark">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+<path d="M5 12h14l-1.2 7H6.2L5 12Z"/>
+<path d="M3 12h18M8 8c-2-2 2-3 0-5m5 5c-2-2 2-3 0-5m4 5c-2-2 2-3 0-5" stroke-linecap="round"/>
+</svg>
+</span>ครัวแบ่งปัน<span class="brand-dot">.</span>
+</a>
+<nav aria-label="เมนูหลัก">
+<a href="#recipes" data-nav="home" aria-current="page">สูตรอาหาร</a>
+<a href="#ideas" data-nav="ideas">ไอเดียเมนู</a>
+<a class="docs-link" href="/api-docs/">เข้าใจระบบ</a>
+</nav>
+<div class="session-controls">
+<span id="session-user" class="session-user" hidden>
+</span>
+<a id="login-link" class="session-link" href="#login" data-login-return>เข้าสู่ระบบ</a>
+<button id="logout" class="session-link" type="button" hidden>ออกจากระบบ</button>
 </div>
-<section id="detail" class="detail-view" data-view="detail" aria-labelledby="detail-heading" aria-busy="false" hidden><a class="back-link" href="#recipes"><span aria-hidden="true">←</span> กลับไปดูสูตรทั้งหมด</a><p id="detail-status" class="status" role="status" aria-live="polite"></p><p id="recipe-success" class="status success" role="status" aria-live="polite" hidden></p><div class="detail-hero"><div class="detail-photo"><img id="detail-image" src="/assets/fried-rice.webp" alt="ภาพประกอบอาหาร" width="900" height="700"><span class="photo-label">ภาพประกอบสูตรอาหาร</span></div><div class="detail-intro"><p id="detail-category" class="section-kicker">สูตรจากครัวแบ่งปัน</p><h1 id="detail-heading" tabindex="-1">กำลังโหลดสูตรอาหาร</h1><p id="recipe-meta" class="detail-meta"></p><p class="detail-invitation">เตรียมวัตถุดิบให้พร้อม<br>แล้วมาทำจานนี้ด้วยกัน</p></div></div><div class="recipe-body"><section class="ingredients-panel" aria-labelledby="ingredients-heading"><h2 id="ingredients-heading">เตรียมวัตถุดิบ</h2><ul id="ingredients" class="ingredients-list"></ul></section><section class="instructions-panel" aria-labelledby="instructions-heading"><h2 id="instructions-heading">เข้าครัวกันเลย</h2><p id="instructions" class="instructions"></p></section></div><section class="reviews-section" aria-labelledby="reviews-heading"><div class="section-head"><div><p class="section-kicker">ทำแล้วเป็นอย่างไรบ้าง?</p><h2 id="reviews-heading">เสียงจากคนลองทำ</h2></div><span id="rating-summary" class="rating-summary"></span></div><div class="reviews-grid"><ul id="ratings" class="ratings"></ul><form id="rating-form" class="rating-form"><p id="rating-auth" class="auth-notice">เข้าสู่ระบบเพื่อให้คะแนน <a href="#login" data-login-return>เข้าสู่ระบบ</a></p><fieldset id="rating-fields" disabled><legend>ให้คะแนนสูตรนี้</legend><p class="hint" id="rating-help">ให้คะแนนในชื่อบัญชีที่เข้าสู่ระบบ<br>แต่ละบัญชีให้คะแนนได้ครั้งเดียวต่อสูตร</p><label for="score">คะแนนของคุณ</label><select id="score" required aria-describedby="rating-help"><option value="">เลือกคะแนน</option><option value="5">5 · ดีมาก</option><option value="4">4 · ดี</option><option value="3">3 · พอใช้</option><option value="2">2 · ควรปรับปรุง</option><option value="1">1 · ต้องปรับปรุง</option></select><label for="review">ความคิดเห็น <span class="optional">ไม่บังคับ</span></label><textarea id="review" maxlength="2000" rows="3" placeholder="เล่าประสบการณ์จากจานนี้"></textarea><button class="button primary" type="submit">บันทึกคะแนน</button></fieldset><p id="rating-status" class="status" role="status" aria-live="polite"></p></form></div></section></section>
-<section id="create" class="create-view" data-view="create" aria-labelledby="create-heading" hidden><a class="back-link" href="#recipes"><span aria-hidden="true">←</span> กลับไปดูสูตรทั้งหมด</a><div class="page-intro"><p class="section-kicker">จากครัวคุณ สู่ครัวของใครอีกคน</p><h1 id="create-heading" tabindex="-1">แบ่งปันจานโปรดของคุณ</h1><p>จดสูตรที่ชอบ บอกวิธีที่ทำ ให้คนอื่นได้ลองอร่อยด้วยกัน</p></div><form id="recipe-form" class="recipe-form"><p id="create-auth" class="auth-notice">เข้าสู่ระบบด้วยบัญชี chef หรือ admin เพื่อแบ่งปันสูตร <a href="#login" data-login-return>เข้าสู่ระบบ</a></p><fieldset id="create-fields" disabled><div class="form-section"><h2>เริ่มที่ข้อมูลสูตร</h2><label for="name">ชื่อสูตรอาหาร</label><input id="name" name="name" required maxlength="150" placeholder="เช่น ไข่เจียวต้นหอม"><div class="form-row"><div><label for="category">หมวดหมู่</label><select id="category" required><option value="">เลือกหมวดหมู่</option></select></div><div><label for="minutes">เวลาปรุง · นาที</label><input id="minutes" type="number" min="1" max="1440" step="1" value="15" required></div><div><label for="difficulty">ความยาก</label><select id="difficulty" required><option value="easy">ง่าย</option><option value="medium">ปานกลาง</option><option value="hard">ยาก</option></select></div></div></div><div class="form-section"><h2>ทำอย่างไรให้อร่อย</h2><label for="steps">วิธีทำ</label><textarea id="steps" required maxlength="5000" rows="7" aria-describedby="steps-help" placeholder="1. เตรียมวัตถุดิบ...&#10;2. เริ่มปรุง...&#10;3. จัดจานพร้อมเสิร์ฟ"></textarea><p id="steps-help" class="hint">ไม่เกิน 5,000 ตัวอักษร · ข้อมูลทั้งหมดไม่เกิน 10 KB</p></div><div class="form-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/></svg><p>ผู้เขียนผูกกับบัญชีที่เข้าสู่ระบบโดยเซิร์ฟเวอร์<br>สูตรใหม่ยังไม่มีวัตถุดิบ เพิ่มได้ผ่าน API และใช้ภาพประกอบทั่วไป</p></div><div class="form-actions"><a class="button secondary" href="#recipes">ยกเลิก</a><button id="save-recipe" class="button primary" type="submit">บันทึกสูตรอาหาร <span aria-hidden="true">↗</span></button></div></fieldset><p id="create-status" class="status" role="status" aria-live="polite"></p></form></section>
-<section id="ideas" class="ideas-view" data-view="ideas" aria-labelledby="ideas-heading" hidden><a class="back-link" href="#recipes"><span aria-hidden="true">←</span> กลับไปดูสูตรทั้งหมด</a><div class="ideas-layout"><div class="ideas-intro"><p class="section-kicker">เริ่มจากสิ่งที่มี</p><h1 id="ideas-heading" tabindex="-1">ในตู้เย็นมีอะไร<br>มื้อนี้มีไอเดีย</h1><p>ใส่วัตถุดิบสักอย่าง แล้วค้นหาเมนูจาก TheMealDB<br>เผื่อได้เจอจานใหม่ที่ยังไม่เคยลอง</p><img src="/assets/fried-rice.webp" alt="ภาพประกอบข้าวผัดกับผักและไข่" width="700" height="500" loading="lazy"></div><div class="ideas-search-panel"><form id="ideas-form"><h2>วันนี้คุณมีวัตถุดิบอะไร?</h2><label for="ingredient">ชื่อวัตถุดิบภาษาอังกฤษ</label><input id="ingredient" required maxlength="50" pattern="[A-Za-z][A-Za-z _\-]{0,49}" value="chicken_breast" aria-describedby="ingredient-help"><p id="ingredient-help" class="hint">เช่น chicken_breast, salmon หรือ rice</p><button class="button primary" type="submit">ค้นหาไอเดียเมนู <span aria-hidden="true">→</span></button></form><p id="ideas-status" class="status" role="status" aria-live="polite">ไอเดียเมนูจะแสดงที่นี่หลังค้นหา</p><ul id="ideas-list" class="ideas-list"></ul><p class="hint external-note">หากบริการภายนอกไม่พร้อม ระบบจะแจ้งและแสดงรายการสำรอง ไอเดียเหล่านี้ไม่ใช่สูตรในครัวแบ่งปัน</p></div></div></section>
-<section id="login" class="login-view" data-view="login" aria-labelledby="login-heading" hidden><a class="back-link" href="#recipes">← กลับไปดูสูตรทั้งหมด</a><div class="login-layout"><div class="login-intro"><p class="section-kicker">กลับมาเข้าครัวด้วยกัน</p><h1 id="login-heading" tabindex="-1">จานโปรด<br>เริ่มที่คุณ</h1><p>อ่านสูตรได้โดยไม่ต้องมีบัญชี<br>เข้าสู่ระบบเมื่อต้องการแบ่งปันสูตรหรือให้คะแนน</p><img src="/assets/pepper-chicken.webp" alt="ภาพประกอบจานไก่ผัดพริกไทย" width="700" height="500"></div><form id="login-form" class="login-form"><h2>เข้าสู่ระบบครัวแบ่งปัน</h2><label for="username">ชื่อผู้ใช้</label><input id="username" name="username" autocomplete="username" required maxlength="50" autocapitalize="none" spellcheck="false"><label for="password">รหัสผ่าน</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="256"><p class="hint">เซสชันเก็บในหน้านี้เท่านั้น รีเฟรชหน้าหรือปิดแท็บแล้วต้องเข้าสู่ระบบใหม่ · token มีอายุ 15 นาที</p><button id="login-submit" class="button primary" type="submit">เข้าสู่ระบบ</button><p id="login-status" class="status" role="status" aria-live="polite"></p><p class="hint login-roles">chef / admin แบ่งปันสูตรได้<br>สมาชิกทุกบทบาทให้คะแนนสูตรได้</p></form></div></section></main>
-<footer class="site-footer"><div class="footer-top"><a class="brand" href="#recipes">ครัวแบ่งปัน<span class="brand-dot">.</span></a><p>จานโปรดของคุณ อาจเป็นมื้อใหม่ของใครอีกคน</p><a href="/api-docs/">คู่มือและทดลอง API ↗</a></div></footer>
+<a class="button primary nav-create" href="#create" data-nav="create">
+<span aria-hidden="true">+</span> เพิ่มสูตร</a>
+</header>
+<main id="main" tabindex="-1">
+<p id="app-notice" class="status success" role="status" aria-live="polite"></p>
+<div id="home-view" data-view="home">
+<section class="hero" aria-labelledby="page-title">
+<div class="hero-copy">
+<p class="hero-eyebrow">K R U A  B A E N G  P A N · ครัวของทุกคน</p>
+<h1 id="page-title" tabindex="-1">มื้อนี้<br>ทำอะไรดี<span>?</span>
+</h1>
+<p>เปลี่ยนคำถามเดิม ๆ เป็นจานโปรดจานใหม่<br>ค้นสูตรที่ใช่ แล้วมาเข้าครัวด้วยกัน</p>
+<a class="button hero-button" href="#collection">หาสูตรที่อยากทำ <span aria-hidden="true">
+<svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+<path d="M5 12h14M13 6l6 6-6 6"/>
+</svg>
+</span>
+</a>
+<span class="hero-note">สูตรจากคนทำอาหาร ถึงคนที่อยากลองทำ</span>
+</div>
+<div class="hero-visual">
+<img src="/assets/pad-krapao.webp" alt="ภาพประกอบผัดกะเพราหมูสับกับข้าวและไข่ดาว" width="900" height="900" fetchpriority="high">
+<a id="featured-recipe" class="hero-recipe" href="#recipes" hidden>
+<span>
+<small>จากสูตรในครัวแบ่งปัน</small>
+<strong id="featured-name">
+</strong>
+<span id="featured-meta" class="hero-recipe-meta">
+</span>
+</span>
+<span class="round-arrow" aria-hidden="true">
+<svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+<path d="M5 12h14M13 6l6 6-6 6"/>
+</svg>
+</span>
+</a>
+</div>
+</section>
+<div class="discovery-path" aria-label="เริ่มใช้งาน">
+<a href="#collection">
+<span>01</span>
+<strong>เลือกสูตร</strong>
+<small>ค้นจานที่อยากทำ</small>
+</a>
+<a href="#ideas">
+<span>02</span>
+<strong>หาไอเดีย</strong>
+<small>เริ่มจากวัตถุดิบที่มี</small>
+</a>
+<a href="/api-docs/">
+<span>03</span>
+<strong>เข้าใจระบบ</strong>
+<small>ดูเบื้องหลังและทดลอง API</small>
+</a>
+</div>
+<section id="recipes" class="collection" aria-labelledby="recipes-heading">
+<div id="collection" class="section-head">
+<div>
+<p class="section-kicker">เลือกสูตร แล้วลงมือทำ</p>
+<h2 id="recipes-heading">อร่อยได้ ในครัวคุณ</h2>
+</div>
+<button id="reload" class="text-button" type="button">
+<span aria-hidden="true">↻</span> โหลดใหม่</button>
+</div>
+<div class="collection-controls">
+<div id="category-chips" class="category-chips" role="group" aria-label="กรองตามหมวดหมู่">
+<button class="chip active" type="button" data-category="" aria-pressed="true">ทั้งหมด</button>
+</div>
+<div class="recipe-search">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+<circle cx="10.5" cy="10.5" r="6.5"/>
+<path d="m16 16 4 4"/>
+</svg>
+<label class="sr-only" for="recipe-search">ค้นหาชื่อสูตรทั้งหมด</label>
+<input id="recipe-search" type="search" placeholder="ค้นหาสูตรอาหาร" maxlength="150">
+</div>
+</div>
+<label class="sr-only" for="category-filter">เลือกหมวดหมู่</label>
+<select id="category-filter" class="sr-only" tabindex="-1" aria-hidden="true">
+<option value="">ทุกหมวดหมู่</option>
+</select>
+<div class="sort-control">
+<label for="difficulty-filter">ความยาก</label>
+<select id="difficulty-filter">
+<option value="">ทุกระดับ</option>
+<option value="easy">ง่าย</option>
+<option value="medium">ปานกลาง</option>
+<option value="hard">ยาก</option>
+</select>
+<label for="recipe-sort">เรียงสูตร</label>
+<select id="recipe-sort">
+<option value="id_asc">สูตรแรกก่อน</option>
+<option value="id_desc">สูตรใหม่ก่อน</option>
+<option value="name_asc">ชื่อสูตร ก ถึง ฮ</option>
+<option value="cook_time_asc">ใช้เวลาน้อยก่อน</option>
+</select>
+</div>
+<p id="list-status" class="status list-status" role="status" aria-live="polite">กำลังโหลดสูตรอาหาร...</p>
+<ul id="recipe-list" class="recipe-grid">
+</ul>
+<nav class="pagination" aria-label="หน้ารายการสูตร">
+<button id="previous-page" class="button secondary" type="button" disabled>← ก่อนหน้า</button>
+<span id="page-status" role="status" aria-live="polite">
+</span>
+<button id="next-page" class="button secondary" type="button" disabled>ถัดไป <svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+<path d="M5 12h14M13 6l6 6-6 6"/>
+</svg>
+</button>
+</nav>
+<div class="ideas-callout">
+<span class="callout-icon" aria-hidden="true">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+<path d="M9 18h6m-5 3h4m-6-9a6 6 0 1 1 8 0c-1.5 1-2 2-2 3h-4c0-1-.5-2-2-3Z"/>
+</svg>
+</span>
+<div>
+<h3>มีวัตถุดิบแล้ว แต่ยังคิดเมนูไม่ออก?</h3>
+<p>ลองค้นหาไอเดียเมนูจากวัตถุดิบที่มี</p>
+</div>
+<a class="button secondary" href="#ideas">หาไอเดียเมนู <span aria-hidden="true">
+<svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+<path d="M5 12h14M13 6l6 6-6 6"/>
+</svg>
+</span>
+</a>
+</div>
+</section>
+</div>
+<section id="detail" class="detail-view" data-view="detail" aria-labelledby="detail-heading" aria-busy="false" hidden>
+<a class="back-link" href="#recipes">
+<span class="icon-back" aria-hidden="true">
+<svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+<path d="M5 12h14M13 6l6 6-6 6"/>
+</svg>
+</span> กลับไปดูสูตรทั้งหมด</a>
+<p id="detail-status" class="status" role="status" aria-live="polite">
+</p>
+<p id="recipe-success" class="status success" role="status" aria-live="polite" hidden>
+</p>
+<div class="detail-hero">
+<div class="detail-photo">
+<img id="detail-image" src="/assets/fried-rice.webp" alt="ภาพประกอบอาหาร" width="900" height="700">
+<span class="photo-label">ภาพประกอบสูตรอาหาร</span>
+</div>
+<div class="detail-intro">
+<p id="detail-category" class="section-kicker">สูตรจากครัวแบ่งปัน</p>
+<h1 id="detail-heading" tabindex="-1">กำลังโหลดสูตรอาหาร</h1>
+<p id="recipe-meta" class="detail-meta">
+</p>
+<p class="detail-invitation">เตรียมวัตถุดิบให้พร้อม<br>แล้วมาทำจานนี้ด้วยกัน</p>
+</div>
+</div>
+<div class="recipe-body">
+<section class="ingredients-panel" aria-labelledby="ingredients-heading">
+<h2 id="ingredients-heading">เตรียมวัตถุดิบ</h2>
+<p class="hint">ติ๊กวัตถุดิบที่เตรียมพร้อมแล้ว</p>
+<ul id="ingredients" class="ingredients-list">
+</ul>
+</section>
+<section class="instructions-panel" aria-labelledby="instructions-heading">
+<h2 id="instructions-heading">เข้าครัวกันเลย</h2>
+<ol id="instructions" class="instructions">
+</ol>
+</section>
+</div>
+<section id="owner-tools" class="owner-tools" hidden aria-labelledby="owner-heading">
+<div class="section-head">
+<div>
+<p class="section-kicker">เฉพาะเจ้าของสูตรและผู้ดูแล</p>
+<h2 id="owner-heading">จัดการสูตรนี้</h2>
+</div>
+</div>
+<div class="owner-grid">
+<p id="detail-catalog-status" class="status" role="status"></p>
+<button id="retry-detail-catalog" class="text-button" type="button" hidden>ลองโหลดคลังวัตถุดิบอีกครั้ง</button>
+<form id="ingredient-form">
+<h3>เพิ่มวัตถุดิบ</h3>
+<p class="hint">เลือกจากคลังวัตถุดิบของระบบ รายการเดิมเพิ่มซ้ำไม่ได้</p>
+<label for="detail-ingredient">วัตถุดิบ</label>
+<select id="detail-ingredient" required>
+<option value="">เลือกวัตถุดิบ</option>
+</select>
+<div class="form-row">
+<div>
+<label for="detail-quantity">ปริมาณ</label>
+<input id="detail-quantity" type="number" min="0.01" max="999999.99" step="0.01" required>
+</div>
+<div>
+<label for="detail-unit">หน่วย</label>
+<input id="detail-unit" maxlength="50" placeholder="เช่น กรัม หรือ ฟอง" required>
+</div>
+</div>
+<button class="button secondary" type="submit">เพิ่มลงในสูตร</button>
+<p id="ingredient-status" class="status" role="status" aria-live="polite">
+</p>
+</form>
+<div class="delete-zone">
+<h3>ลบสูตรอาหาร</h3>
+<p>สูตร วัตถุดิบที่ผูกไว้ และรีวิวทั้งหมดของสูตรนี้จะถูกลบ และเรียกคืนจากหน้าเว็บไม่ได้</p>
+<button id="delete-open" class="button danger" type="button">ลบสูตรนี้</button>
+<div id="delete-confirm" hidden>
+<label for="delete-name">พิมพ์ชื่อสูตรเพื่อยืนยัน</label>
+<input id="delete-name" autocomplete="off">
+<div class="form-actions">
+<button id="delete-cancel" class="button secondary" type="button">ยกเลิก</button>
+<button id="delete-recipe" class="button danger" type="button">ยืนยันลบถาวร</button>
+</div>
+</div>
+<p id="delete-status" class="status" role="status" aria-live="polite">
+</p>
+</div>
+</div>
+</section>
+<section class="reviews-section" aria-labelledby="reviews-heading">
+<div class="section-head">
+<div>
+<p class="section-kicker">ทำแล้วเป็นอย่างไรบ้าง?</p>
+<h2 id="reviews-heading">เสียงจากคนลองทำ</h2>
+</div>
+<span id="rating-summary" class="rating-summary">
+</span>
+</div>
+<div class="reviews-grid">
+<ul id="ratings" class="ratings">
+</ul>
+<form id="rating-form" class="rating-form">
+<p id="rating-auth" class="auth-notice">เข้าสู่ระบบเพื่อให้คะแนน <a href="#login" data-login-return>เข้าสู่ระบบ</a>
+</p>
+<fieldset id="rating-fields" disabled>
+<legend>ให้คะแนนสูตรนี้</legend>
+<p class="hint" id="rating-help">ให้คะแนนในชื่อบัญชีที่เข้าสู่ระบบ<br>แต่ละบัญชีให้คะแนนได้ครั้งเดียวต่อสูตร</p>
+<label for="score">คะแนนของคุณ</label>
+<select id="score" required aria-describedby="rating-help">
+<option value="">เลือกคะแนน</option>
+<option value="5">5 · ดีมาก</option>
+<option value="4">4 · ดี</option>
+<option value="3">3 · พอใช้</option>
+<option value="2">2 · ควรปรับปรุง</option>
+<option value="1">1 · ต้องปรับปรุง</option>
+</select>
+<label for="review">ความคิดเห็น <span class="optional">ไม่บังคับ</span>
+</label>
+<textarea id="review" maxlength="2000" rows="3" placeholder="เล่าประสบการณ์จากจานนี้">
+</textarea>
+<button class="button primary" type="submit">บันทึกคะแนน</button>
+</fieldset>
+<p id="rating-status" class="status" role="status" aria-live="polite">
+</p>
+</form>
+</div>
+</section>
+</section>
+<section id="create" class="create-view" data-view="create" aria-labelledby="create-heading" hidden>
+<a class="back-link" href="#recipes">
+<span class="icon-back" aria-hidden="true">
+<svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+<path d="M5 12h14M13 6l6 6-6 6"/>
+</svg>
+</span> กลับไปดูสูตรทั้งหมด</a>
+<div class="page-intro">
+<p class="section-kicker">จากครัวคุณ สู่ครัวของใครอีกคน</p>
+<h1 id="create-heading" tabindex="-1">แบ่งปันจานโปรดของคุณ</h1>
+<p>จดสูตรที่ชอบ บอกวิธีที่ทำ ให้คนอื่นได้ลองอร่อยด้วยกัน</p>
+</div>
+<form id="recipe-form" class="recipe-form">
+<p id="create-auth" class="auth-notice">เข้าสู่ระบบด้วยบัญชี chef หรือ admin เพื่อแบ่งปันสูตร <a href="#login" data-login-return>เข้าสู่ระบบ</a>
+</p>
+<fieldset id="create-fields" disabled>
+<div class="form-section">
+<p class="section-kicker">01 / เล่าถึงจานนี้</p>
+<h2>เริ่มที่ข้อมูลสูตร</h2>
+<p class="hint">ช่องที่ไม่มีคำว่า “ไม่บังคับ” จำเป็นต้องกรอก</p>
+<label for="name">ชื่อสูตรอาหาร</label>
+<input id="name" name="name" required maxlength="150" placeholder="เช่น ไข่เจียวต้นหอม">
+<div class="form-row">
+<div>
+<label for="category">หมวดหมู่</label>
+<select id="category" required>
+<option value="">เลือกหมวดหมู่</option>
+</select>
+</div>
+<div>
+<label for="minutes">เวลาปรุง · นาที</label>
+<input id="minutes" type="number" min="1" max="1440" step="1" value="15" required>
+</div>
+<div>
+<label for="difficulty">ความยาก</label>
+<select id="difficulty" required>
+<option value="easy">ง่าย</option>
+<option value="medium">ปานกลาง</option>
+<option value="hard">ยาก</option>
+</select>
+</div>
+</div>
+</div>
+<div class="form-section ingredient-builder">
+<div class="section-head">
+<div>
+<p class="section-kicker">02 / เตรียมของให้ครบ</p>
+<h2>วัตถุดิบและปริมาณ</h2>
+</div>
+</div>
+<p class="hint" id="ingredient-builder-help">เลือกวัตถุดิบจากคลัง พร้อมปริมาณและหน่วย สูตรและวัตถุดิบจะบันทึกพร้อมกัน</p>
+<div id="ingredient-rows">
+</div>
+<button id="add-ingredient-row" class="button secondary" type="button">+ เพิ่มวัตถุดิบ</button>
+<p id="catalog-status" class="status" role="status" aria-live="polite">
+</p>
+<button id="retry-catalog" class="text-button" type="button" hidden>ลองโหลดคลังวัตถุดิบอีกครั้ง</button>
+</div>
+<div class="form-section">
+<p class="section-kicker">03 / บอกวิธีทำ</p>
+<h2>ทำอย่างไรให้อร่อย</h2>
+<label for="steps">วิธีทำ</label>
+<textarea id="steps" required maxlength="5000" rows="7" aria-describedby="steps-help" placeholder="1. เตรียมวัตถุดิบ...&#10;2. เริ่มปรุง...&#10;3. จัดจานพร้อมเสิร์ฟ">
+</textarea>
+<p id="steps-help" class="hint">ไม่เกิน 5,000 ตัวอักษร · ข้อมูลทั้งหมดไม่เกิน 10 KB</p>
+</div>
+<div class="form-note">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+<circle cx="12" cy="12" r="9"/>
+<path d="M12 11v6m0-10v1"/>
+</svg>
+<p>ผู้เขียนผูกกับบัญชีที่เข้าสู่ระบบโดยเซิร์ฟเวอร์<br>เพิ่มวัตถุดิบได้ในฟอร์มนี้ สูตรใหม่ใช้ภาพประกอบทั่วไป ไม่ใช่ภาพที่ถ่ายจากสูตรของคุณ</p>
+</div>
+<div class="form-actions">
+<a class="button secondary" href="#recipes">ยกเลิก</a>
+<button id="save-recipe" class="button primary" type="submit">บันทึกสูตรอาหาร <span aria-hidden="true">
+<svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+<path d="M5 12h14M13 6l6 6-6 6"/>
+</svg>
+</span>
+</button>
+</div>
+</fieldset>
+<p id="create-status" class="status" role="status" aria-live="polite">
+</p>
+</form>
+</section>
+<section id="ideas" class="ideas-view" data-view="ideas" aria-labelledby="ideas-heading" hidden>
+<a class="back-link" href="#recipes">
+<span class="icon-back" aria-hidden="true">
+<svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+<path d="M5 12h14M13 6l6 6-6 6"/>
+</svg>
+</span> กลับไปดูสูตรทั้งหมด</a>
+<div class="ideas-layout">
+<div class="ideas-intro">
+<p class="section-kicker">เริ่มจากสิ่งที่มี</p>
+<h1 id="ideas-heading" tabindex="-1">ในตู้เย็นมีอะไร<br>มื้อนี้มีไอเดีย</h1>
+<p>ใส่วัตถุดิบสักอย่าง แล้วค้นหาเมนูจาก TheMealDB<br>เผื่อได้เจอจานใหม่ที่ยังไม่เคยลอง</p>
+<img src="/assets/fried-rice.webp" alt="ภาพประกอบข้าวผัดกับผักและไข่" width="700" height="500" loading="lazy">
+</div>
+<div class="ideas-search-panel">
+<form id="ideas-form">
+<h2>วันนี้คุณมีวัตถุดิบอะไร?</h2>
+<label for="ingredient">ชื่อวัตถุดิบภาษาอังกฤษ</label>
+<input id="ingredient" required maxlength="50" pattern="[A-Za-z][A-Za-z _\-]{0,49}" value="chicken_breast" aria-describedby="ingredient-help">
+<p id="ingredient-help" class="hint">บริการนี้ค้นด้วยภาษาอังกฤษ เลือกตัวอย่างด้านล่างหรือพิมพ์เองได้</p>
+<div class="ingredient-examples" aria-label="ตัวอย่างวัตถุดิบ">
+<button type="button" class="chip" data-idea="chicken_breast">ไก่</button>
+<button type="button" class="chip" data-idea="salmon">แซลมอน</button>
+<button type="button" class="chip" data-idea="rice">ข้าว</button>
+</div>
+<button class="button primary" type="submit">ค้นหาไอเดียเมนู <span aria-hidden="true">
+<svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+<path d="M5 12h14M13 6l6 6-6 6"/>
+</svg>
+</span>
+</button>
+</form>
+<p id="ideas-status" class="status" role="status" aria-live="polite">ไอเดียเมนูจะแสดงที่นี่หลังค้นหา</p>
+<ul id="ideas-list" class="ideas-list">
+</ul>
+<p class="hint external-note">หากบริการภายนอกไม่พร้อม ระบบจะแจ้งและแสดงรายการสำรอง ไอเดียเหล่านี้ไม่ใช่สูตรในครัวแบ่งปัน</p>
+</div>
+</div>
+</section>
+<section id="login" class="login-view" data-view="login" aria-labelledby="login-heading" hidden>
+<a class="back-link" href="#recipes">← กลับไปดูสูตรทั้งหมด</a>
+<div class="login-layout">
+<div class="login-intro">
+<p class="section-kicker">กลับมาเข้าครัวด้วยกัน</p>
+<h1 id="login-heading" tabindex="-1">จานโปรด<br>เริ่มที่คุณ</h1>
+<p>อ่านสูตรได้โดยไม่ต้องมีบัญชี<br>เข้าสู่ระบบเมื่อต้องการแบ่งปันสูตรหรือให้คะแนน</p>
+<img src="/assets/pepper-chicken.webp" alt="ภาพประกอบจานไก่ผัดพริกไทย" width="700" height="500">
+</div>
+<form id="login-form" class="login-form">
+<h2>เข้าสู่ระบบครัวแบ่งปัน</h2>
+<label for="username">ชื่อผู้ใช้</label>
+<input id="username" name="username" autocomplete="username" required maxlength="50" autocapitalize="none" spellcheck="false">
+<label for="password">รหัสผ่าน</label>
+<input id="password" name="password" type="password" autocomplete="current-password" required maxlength="256">
+<p class="hint">เซสชันเก็บในหน้านี้เท่านั้น รีเฟรชหน้าหรือปิดแท็บแล้วต้องเข้าสู่ระบบใหม่ · token มีอายุ 15 นาที</p>
+<button id="login-submit" class="button primary" type="submit">เข้าสู่ระบบ</button>
+<p id="login-status" class="status" role="status" aria-live="polite">
+</p>
+<p class="hint login-roles">chef / admin แบ่งปันสูตรได้<br>สมาชิกทุกบทบาทให้คะแนนสูตรได้</p>
+</form>
+</div>
+</section>
+</main>
+<footer class="site-footer">
+<div class="footer-top">
+<a class="brand" href="#recipes">ครัวแบ่งปัน<span class="brand-dot">.</span>
+</a>
+<p>จานโปรดของคุณ อาจเป็นมื้อใหม่ของใครอีกคน</p>
+<a href="/api-docs/">คู่มือและทดลอง API <svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+<path d="M5 12h14M13 6l6 6-6 6"/>
+</svg>
+</a>
+</div>
+</footer>
 </body>
 </html>

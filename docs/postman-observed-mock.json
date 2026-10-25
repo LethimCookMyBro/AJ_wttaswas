@@ -1,0 +1,1183 @@
+{
+  "info": {
+    "name": "Recipe API Phase 3 - authenticated demo (observed mock/local fixture run)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Set baseUrl and demoPassword locally. Run in order against a disposable course database. Secrets and JWT values are never embedded. Recorded against http://127.0.0.1:38555 at 2026-10-25T04:37:50.529Z. Login JWT values were redacted; all other example bodies are observed server responses. Database mode: in-memory test fixture, NOT MySQL. MealDB endpoint: controlled local HTTP fixture, NOT live TheMealDB. No production data touched."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3000"
+    },
+    {
+      "key": "demoPassword",
+      "value": ""
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "newRecipeId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Login chef",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "url": "{{baseUrl}}/api/v1/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"chef_somchai\",\n  \"password\": \"{{demoPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('token', pm.response.json().data.token);"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Observed HTTP response; login token redacted",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"chef_somchai\",\n  \"password\": \"{{demoPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "content-type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "ratelimit",
+              "value": "\"200-in-1min\"; r=199; t=60, \"10-in-1min\"; r=9; t=60"
+            },
+            {
+              "key": "ratelimit-policy",
+              "value": "\"200-in-1min\"; q=200; w=60; pk=:MTJjYTE3YjQ5YWYy:, \"10-in-1min\"; q=10; w=60; pk=:MTJjYTE3YjQ5YWYy:"
+            }
+          ],
+          "body": "{\n  \"message\": \"เข้าสู่ระบบสำเร็จ\",\n  \"data\": {\n    \"token\": \"[REDACTED JWT - observed token omitted]\",\n    \"user\": {\n      \"id\": 1,\n      \"username\": \"chef_somchai\",\n      \"role\": \"chef\"\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "List categories",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/api/v1/categories"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Observed HTTP response; login token redacted",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/categories"
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "content-type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "ratelimit",
+              "value": "\"200-in-1min\"; r=198; t=60"
+            },
+            {
+              "key": "ratelimit-policy",
+              "value": "\"200-in-1min\"; q=200; w=60; pk=:MTJjYTE3YjQ5YWYy:"
+            },
+            {
+              "key": "x-cache",
+              "value": "MISS"
+            }
+          ],
+          "body": "{\"message\":\"ดึงรายการหมวดหมู่สำเร็จ\",\"data\":[{\"id\":1,\"name\":\"อาหารคาวไทย\",\"description\":\"สูตรอาหารไทยรสชาติต้นตำรับ เข้มข้น กลมกล่อม\"},{\"id\":2,\"name\":\"ของหวานและเบเกอรี่\",\"description\":\"ขนมหวาน ขนมไทย และเบเกอรี่ทำง่าย\"},{\"id\":3,\"name\":\"อาหารเพื่อสุขภาพ\",\"description\":\"เมนูอาหารคลีน แคลอรี่ต่ำ อุดมไปด้วยโปรตีน\"}]}"
+        }
+      ]
+    },
+    {
+      "name": "List ingredients",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/api/v1/ingredients"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Observed HTTP response; login token redacted",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/ingredients"
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "content-type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "ratelimit",
+              "value": "\"200-in-1min\"; r=197; t=60"
+            },
+            {
+              "key": "ratelimit-policy",
+              "value": "\"200-in-1min\"; q=200; w=60; pk=:MTJjYTE3YjQ5YWYy:"
+            }
+          ],
+          "body": "{\"message\":\"ดึงรายการวัตถุดิบสำเร็จ\",\"data\":[{\"id\":1,\"name\":\"หมูสับ\",\"unit_type\":\"grams\"},{\"id\":2,\"name\":\"ใบกะเพรา\",\"unit_type\":\"grams\"},{\"id\":3,\"name\":\"พริกขี้หนู\",\"unit_type\":\"pieces\"},{\"id\":4,\"name\":\"กระเทียม\",\"unit_type\":\"cloves\"},{\"id\":5,\"name\":\"ไข่ไก่\",\"unit_type\":\"pieces\"},{\"id\":6,\"name\":\"กะทิ\",\"unit_type\":\"ml\"},{\"id\":7,\"name\":\"ข้าวเหนียว\",\"unit_type\":\"grams\"},{\"id\":8,\"name\":\"มะม่วงน้ำดอกไม้\",\"unit_type\":\"pieces\"}]}"
+        }
+      ]
+    },
+    {
+      "name": "Filter and paginate recipes",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/api/v1/recipes?page=1&limit=2&difficulty=easy&sort=cook_time_asc"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Observed HTTP response; login token redacted",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/recipes?page=1&limit=2&difficulty=easy&sort=cook_time_asc"
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "content-type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "ratelimit",
+              "value": "\"200-in-1min\"; r=196; t=60"
+            },
+            {
+              "key": "ratelimit-policy",
+              "value": "\"200-in-1min\"; q=200; w=60; pk=:MTJjYTE3YjQ5YWYy:"
+            }
+          ],
+          "body": "{\"message\":\"ดึงรายการสูตรอาหารสำเร็จ\",\"data\":[{\"id\":1,\"name\":\"ผัดกะเพราหมูสับไข่ดาว\",\"cook_time_minutes\":15,\"difficulty\":\"easy\",\"category_id\":1,\"category_name\":\"อาหารคาวไทย\"},{\"id\":3,\"name\":\"อกไก่ผัดพริกไทยดำคลีน\",\"cook_time_minutes\":20,\"difficulty\":\"easy\",\"category_id\":3,\"category_name\":\"อาหารเพื่อสุขภาพ\"}],\"pagination\":{\"page\":1,\"limit\":2,\"total\":2,\"totalPages\":1}}"
+        }
+      ]
+    },
+    {
+      "name": "Reject invalid query",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/api/v1/recipes?limit=101"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Observed HTTP response; login token redacted",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/recipes?limit=101"
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "header": [
+            {
+              "key": "content-type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "ratelimit",
+              "value": "\"200-in-1min\"; r=195; t=60"
+            },
+            {
+              "key": "ratelimit-policy",
+              "value": "\"200-in-1min\"; q=200; w=60; pk=:MTJjYTE3YjQ5YWYy:"
+            }
+          ],
+          "body": "{\"error\":{\"code\":\"VALIDATION_ERROR\",\"message\":\"Invalid pagination, filter, or sort\"}}"
+        }
+      ]
+    },
+    {
+      "name": "Create owned recipe",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/api/v1/recipes",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Postman demo\",\n  \"categoryId\": 1,\n  \"instructions\": \"Cook fixture\",\n  \"cookTimeMinutes\": 15,\n  \"difficulty\": \"easy\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('newRecipeId', pm.response.json().data.id);"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Observed HTTP response; login token redacted",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/recipes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman demo\",\n  \"categoryId\": 1,\n  \"instructions\": \"Cook fixture\",\n  \"cookTimeMinutes\": 15,\n  \"difficulty\": \"easy\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "content-type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "ratelimit",
+              "value": "\"200-in-1min\"; r=194; t=60"
+            },
+            {
+              "key": "ratelimit-policy",
+              "value": "\"200-in-1min\"; q=200; w=60; pk=:MTJjYTE3YjQ5YWYy:"
+            }
+          ],
+          "body": "{\"message\":\"สร้างสูตรอาหารสำเร็จ\",\"data\":{\"id\":4,\"name\":\"Postman demo\",\"categoryId\":1,\"authorId\":1,\"cookTimeMinutes\":15,\"difficulty\":\"easy\"}}"
+        }
+      ]
+    },
+    {
+      "name": "Attach ingredient",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/api/v1/recipes/{{newRecipeId}}/ingredients",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ingredientId\": 1,\n  \"quantity\": 100,\n  \"unit\": \"grams\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Observed HTTP response; login token redacted",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/recipes/{{newRecipeId}}/ingredients",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ingredientId\": 1,\n  \"quantity\": 100,\n  \"unit\": \"grams\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "content-type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "ratelimit",
+              "value": "\"200-in-1min\"; r=193; t=60"
+            },
+            {
+              "key": "ratelimit-policy",
+              "value": "\"200-in-1min\"; q=200; w=60; pk=:MTJjYTE3YjQ5YWYy:"
+            }
+          ],
+          "body": "{\"message\":\"เพิ่มวัตถุดิบในสูตรอาหารสำเร็จ\",\"data\":{\"id\":9,\"recipeId\":4,\"ingredientId\":1,\"quantity\":100,\"unit\":\"grams\"}}"
+        }
+      ]
+    },
+    {
+      "name": "Read detail",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/api/v1/recipes/{{newRecipeId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Observed HTTP response; login token redacted",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/recipes/{{newRecipeId}}"
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "content-type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "ratelimit",
+              "value": "\"200-in-1min\"; r=192; t=60"
+            },
+            {
+              "key": "ratelimit-policy",
+              "value": "\"200-in-1min\"; q=200; w=60; pk=:MTJjYTE3YjQ5YWYy:"
+            }
+          ],
+          "body": "{\"message\":\"ดึงข้อมูลสูตรอาหารสำเร็จ\",\"data\":{\"id\":4,\"name\":\"Postman demo\",\"cook_time_minutes\":15,\"difficulty\":\"easy\",\"category_id\":1,\"instructions\":\"Cook fixture\",\"author_id\":1,\"category_name\":\"อาหารคาวไทย\",\"ingredients\":[{\"ingredient_id\":1,\"name\":\"หมูสับ\",\"quantity\":100,\"unit\":\"grams\"}]}}"
+        }
+      ]
+    },
+    {
+      "name": "Login member",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "url": "{{baseUrl}}/api/v1/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"foodie_somying\",\n  \"password\": \"{{demoPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('token', pm.response.json().data.token);"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Observed HTTP response; login token redacted",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"foodie_somying\",\n  \"password\": \"{{demoPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "content-type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "ratelimit",
+              "value": "\"200-in-1min\"; r=191; t=60, \"10-in-1min\"; r=8; t=60"
+            },
+            {
+              "key": "ratelimit-policy",
+              "value": "\"200-in-1min\"; q=200; w=60; pk=:MTJjYTE3YjQ5YWYy:, \"10-in-1min\"; q=10; w=60; pk=:MTJjYTE3YjQ5YWYy:"
+            }
+          ],
+          "body": "{\n  \"message\": \"เข้าสู่ระบบสำเร็จ\",\n  \"data\": {\n    \"token\": \"[REDACTED JWT - observed token omitted]\",\n    \"user\": {\n      \"id\": 2,\n      \"username\": \"foodie_somying\",\n      \"role\": \"member\"\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Member cannot create recipe",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/api/v1/recipes",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Denied\",\n  \"categoryId\": 1,\n  \"instructions\": \"No\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 403', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Observed HTTP response; login token redacted",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/recipes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Denied\",\n  \"categoryId\": 1,\n  \"instructions\": \"No\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "Forbidden",
+          "code": 403,
+          "header": [
+            {
+              "key": "content-type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "ratelimit",
+              "value": "\"200-in-1min\"; r=190; t=60"
+            },
+            {
+              "key": "ratelimit-policy",
+              "value": "\"200-in-1min\"; q=200; w=60; pk=:MTJjYTE3YjQ5YWYy:"
+            }
+          ],
+          "body": "{\"error\":{\"code\":\"FORBIDDEN\",\"message\":\"Chef or admin required\"}}"
+        }
+      ]
+    },
+    {
+      "name": "Member rates",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/api/v1/recipes/{{newRecipeId}}/ratings",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ratingScore\": 5,\n  \"reviewComment\": \"Course fixture\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Observed HTTP response; login token redacted",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/recipes/{{newRecipeId}}/ratings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ratingScore\": 5,\n  \"reviewComment\": \"Course fixture\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "content-type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "ratelimit",
+              "value": "\"200-in-1min\"; r=189; t=60"
+            },
+            {
+              "key": "ratelimit-policy",
+              "value": "\"200-in-1min\"; q=200; w=60; pk=:MTJjYTE3YjQ5YWYy:"
+            }
+          ],
+          "body": "{\"message\":\"บันทึกรีวิวสำเร็จ\",\"data\":{\"id\":4,\"recipeId\":4,\"userId\":2,\"ratingScore\":5,\"reviewComment\":\"Course fixture\"}}"
+        }
+      ]
+    },
+    {
+      "name": "Read reviews",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/api/v1/recipes/{{newRecipeId}}/ratings"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Observed HTTP response; login token redacted",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/recipes/{{newRecipeId}}/ratings"
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "content-type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "ratelimit",
+              "value": "\"200-in-1min\"; r=188; t=60"
+            },
+            {
+              "key": "ratelimit-policy",
+              "value": "\"200-in-1min\"; q=200; w=60; pk=:MTJjYTE3YjQ5YWYy:"
+            }
+          ],
+          "body": "{\"message\":\"ดึงรีวิวสูตรอาหารสำเร็จ\",\"data\":{\"recipeId\":4,\"ratingCount\":1,\"averageScore\":5,\"ratings\":[{\"id\":4,\"userId\":2,\"username\":\"foodie_somying\",\"ratingScore\":5,\"reviewComment\":\"Course fixture\",\"createdAt\":\"2026-10-25T04:37:50.459Z\"}]}}"
+        }
+      ]
+    },
+    {
+      "name": "Meal ideas with fallback",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/api/v1/external/meal-ideas?ingredient=chicken_breast"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Observed HTTP response; login token redacted",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/external/meal-ideas?ingredient=chicken_breast"
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "content-type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "ratelimit",
+              "value": "\"200-in-1min\"; r=187; t=60"
+            },
+            {
+              "key": "ratelimit-policy",
+              "value": "\"200-in-1min\"; q=200; w=60; pk=:MTJjYTE3YjQ5YWYy:"
+            },
+            {
+              "key": "x-data-source",
+              "value": "themealdb"
+            }
+          ],
+          "body": "{\"message\":\"ดึงไอเดียเมนูจากบริการภายนอกสำเร็จ\",\"data\":{\"source\":\"themealdb\",\"degraded\":false,\"attempts\":1,\"ideas\":[{\"id\":\"fixture-1\",\"name\":\"Local upstream fixture\",\"thumbnail\":null}]}}"
+        }
+      ]
+    },
+    {
+      "name": "Login chef to clean up",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "url": "{{baseUrl}}/api/v1/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"chef_somchai\",\n  \"password\": \"{{demoPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('token', pm.response.json().data.token);"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Observed HTTP response; login token redacted",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"chef_somchai\",\n  \"password\": \"{{demoPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "content-type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "ratelimit",
+              "value": "\"200-in-1min\"; r=186; t=60, \"10-in-1min\"; r=7; t=60"
+            },
+            {
+              "key": "ratelimit-policy",
+              "value": "\"200-in-1min\"; q=200; w=60; pk=:MTJjYTE3YjQ5YWYy:, \"10-in-1min\"; q=10; w=60; pk=:MTJjYTE3YjQ5YWYy:"
+            }
+          ],
+          "body": "{\n  \"message\": \"เข้าสู่ระบบสำเร็จ\",\n  \"data\": {\n    \"token\": \"[REDACTED JWT - observed token omitted]\",\n    \"user\": {\n      \"id\": 1,\n      \"username\": \"chef_somchai\",\n      \"role\": \"chef\"\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete created fixture only",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/api/v1/recipes/{{newRecipeId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Observed HTTP response; login token redacted",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/recipes/{{newRecipeId}}"
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "content-type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "ratelimit",
+              "value": "\"200-in-1min\"; r=185; t=60"
+            },
+            {
+              "key": "ratelimit-policy",
+              "value": "\"200-in-1min\"; q=200; w=60; pk=:MTJjYTE3YjQ5YWYy:"
+            }
+          ],
+          "body": "{\"message\":\"ลบสูตรอาหารสำเร็จ\"}"
+        }
+      ]
+    }
+  ]
+}

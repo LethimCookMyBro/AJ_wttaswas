@@ -205,17 +205,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "404":
-          description: ไม่พบหมวดหมู่หรือผู้เขียนที่ระบุ (REFERENCE_NOT_FOUND)
+          description: ไม่พบหมวดหมู่ ผู้เขียน หรือวัตถุดิบที่ระบุ (REFERENCE_NOT_FOUND). No recipe or ingredient lines are saved.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
         "413":
-          description: JSON body exceeds 64kb
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/PayloadTooLarge"
         "429":
           $ref: "#/components/responses/RateLimited"
         "500":
@@ -290,11 +286,7 @@ paths:
         "404":
           $ref: "#/components/responses/RecipeNotFound"
         "413":
-          description: JSON body exceeds 64kb
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/PayloadTooLarge"
         "429":
           $ref: "#/components/responses/RateLimited"
         "500":
@@ -368,11 +360,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "413":
-          description: JSON body exceeds 64kb
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/PayloadTooLarge"
         "429":
           $ref: "#/components/responses/RateLimited"
         "500":
@@ -476,11 +464,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "413":
-          description: JSON body exceeds 64kb
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/PayloadTooLarge"
         "429":
           $ref: "#/components/responses/RateLimited"
         "500":
@@ -705,11 +689,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "413":
-          description: JSON body exceeds 64kb
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+          $ref: "#/components/responses/PayloadTooLarge"
         "429":
           $ref: "#/components/responses/RateLimited"
         "500":
@@ -803,6 +783,10 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: PAYLOAD_TOO_LARGE
+              message: request body ใหญ่เกิน 64kb
     InternalError:
       description: ข้อผิดพลาดภายในระบบหรือฐานข้อมูล (INTERNAL_SERVER_ERROR)
       content:
@@ -824,6 +808,10 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: RATE_LIMITED
+              message: Too many requests
   schemas:
     Error:
       type: object
@@ -838,7 +826,6 @@ components:
           properties:
             code:
               type: string
-              example: RECIPE_NOT_FOUND
             message:
               type: string
     Category:
@@ -933,7 +920,12 @@ components:
           required:
             - instructions
             - ingredients
+            - author_id
           properties:
+            author_id:
+              type: integer
+              minimum: 1
+              description: Recipe owner ID for author/admin management controls.
             instructions:
               type: string
             ingredients:
@@ -974,6 +966,12 @@ components:
             - medium
             - hard
           default: easy
+        ingredients:
+          type: array
+          maxItems: 50
+          description: Optional initial ingredients, saved atomically with the recipe. Ingredient IDs must be unique; any invalid reference rolls back the entire create.
+          items:
+            $ref: "#/components/schemas/AddRecipeIngredientRequest"
     CreatedRecipe:
       type: object
       required:

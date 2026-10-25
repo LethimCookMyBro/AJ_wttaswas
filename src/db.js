@@ -69,16 +69,23 @@ function createMockPool() {
     }
     return { rows, i };
   };
+  const projectRecipe = (r, sql) => {
+    const fields = ["id", "name", "cook_time_minutes", "difficulty", "category_id"];
+    if (sql.includes("r.instructions")) fields.push("instructions");
+    if (sql.includes("r.author_id")) fields.push("author_id");
+    return { ...Object.fromEntries(fields.map((key) => [key, r[key]])), category_name: categoryName(r.category_id) };
+  };
   const handlers = [
+    { match: (sql) => sql === "select 1", run: () => [[{ 1: 1 }]] },
     { match: (sql) => sql.includes("from users where username = ?"), run: ([username]) => [users.filter((u) => u.username === username)] },
     { match: (sql) => sql.includes("from users where id = ?"), run: ([id]) => [users.filter((u) => u.id === id)] },
     { match: (sql) => sql.startsWith("select id, author_id from recipes"), run: ([id]) => [recipes.filter((r) => r.id === id).map((r) => ({ id: r.id, author_id: r.author_id }))] },
     { match: (sql) => sql.startsWith("select count(*) as total from recipes r"), run: (params, sql) => [[{ total: filteredRecipes(sql, params).rows.length }]] },
     {
       match: (sql) => sql.includes("from recipes r") && sql.includes("join categories") && sql.includes("where r.id = ?"),
-      run: ([id]) => {
+      run: ([id], sql) => {
         const r = recipes.find((item) => item.id === Number(id));
-        return [r ? [{ ...r, category_name: categoryName(r.category_id) }] : []];
+        return [r ? [projectRecipe(r, sql)] : []];
       },
     },
     {
@@ -88,7 +95,7 @@ function createMockPool() {
         if (sql.includes("order by r.id desc")) rows.sort((a, b) => b.id - a.id);
         if (sql.includes("order by r.name asc")) rows.sort((a, b) => a.name.localeCompare(b.name, "th"));
         if (sql.includes("order by r.cook_time_minutes asc")) rows.sort((a, b) => a.cook_time_minutes - b.cook_time_minutes || a.id - b.id);
-        return [rows.slice(params[i + 1], params[i + 1] + params[i]).map((r) => ({ ...r, category_name: categoryName(r.category_id) }))];
+        return [rows.slice(params[i + 1], params[i + 1] + params[i]).map((r) => projectRecipe(r, sql))];
       },
     },
     {
@@ -137,6 +144,7 @@ function createMockPool() {
     {
       match: (sql) => sql.startsWith("insert into recipe_ingredients"),
       run: ([recipeId, ingredientId, quantity, unit]) => {
+        if (!recipes.some((r) => r.id === Number(recipeId))) throw noRef("FK recipe_id");
         if (!ingredients.some((i) => i.id === Number(ingredientId))) throw noRef("FK ingredient_id");
         if (recipeIngredients.some((ri) => ri.recipe_id === Number(recipeId) && ri.ingredient_id === Number(ingredientId))) {
           throw dupEntry("unique_recipe_ingredient");
@@ -149,6 +157,7 @@ function createMockPool() {
     {
       match: (sql) => sql.startsWith("insert into ratings"),
       run: ([recipeId, userId, score, comment]) => {
+        if (!recipes.some((r) => r.id === Number(recipeId))) throw noRef("FK recipe_id");
         if (!users.some((u) => u.id === Number(userId))) throw noRef("FK user_id");
         if (ratings.some((rt) => rt.recipe_id === Number(recipeId) && rt.user_id === Number(userId))) {
           throw dupEntry("unique_user_recipe_rating");
@@ -183,7 +192,40 @@ function createMockPool() {
     return handler.run(params, normalized);
   };
 
-  return { query, end: async () => {}, getConnection: async () => ({ query, release: () => {} }) };
+  // Serialize the test double's transactions and ordinary queries so a rollback
+  // cannot erase another request's committed writes. This is not a MySQL emulator.
+  let tail = Promise.resolve();
+  const lock = async () => {
+    const previous = tail;
+    let unlock;
+    tail = new Promise((resolve) => { unlock = resolve; });
+    await previous;
+    return unlock;
+  };
+  const pooledQuery = async (...args) => {
+    const unlock = await lock();
+    try { return await query(...args); } finally { unlock(); }
+  };
+  const getConnection = async () => {
+    let unlock, snapshot;
+    const finish = () => { snapshot = null; if (unlock) { unlock(); unlock = null; } };
+    const rollback = async () => {
+      if (snapshot) ({ recipes, recipeIngredients, ratings } = snapshot);
+      finish();
+    };
+    return {
+      query: (...args) => unlock ? query(...args) : pooledQuery(...args),
+      beginTransaction: async () => {
+        if (unlock) throw new Error("Transaction already started");
+        unlock = await lock();
+        snapshot = structuredClone({ recipes, recipeIngredients, ratings });
+      },
+      commit: async () => { finish(); },
+      rollback,
+      release: () => { if (snapshot) { ({ recipes, recipeIngredients, ratings } = snapshot); } finish(); },
+    };
+  };
+  return { query: pooledQuery, end: async () => {}, getConnection };
 }
 
 if (process.env.NODE_ENV === "test" && process.env.USE_REAL_DB !== "1") {

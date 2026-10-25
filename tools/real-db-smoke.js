@@ -2,6 +2,7 @@ require("dotenv").config();
 const assert = require("assert/strict");
 if (process.env.USE_REAL_DB !== "1") throw new Error("USE_REAL_DB=1 is required; this script never uses the mock database");
 if (!process.env.DEMO_PASSWORD) throw new Error("Set DEMO_PASSWORD for the local fixture");
+if (!["127.0.0.1", "localhost", "::1"].includes(process.env.DB_HOST || "localhost")) throw new Error("Real-DB fixture smoke is loopback-only; never point it at a production database");
 const pool = require("../src/db");
 const app = require("../src/index");
 
@@ -66,7 +67,7 @@ const app = require("../src/index");
     const [[ingredients]] = await pool.query("SELECT COUNT(*) AS total FROM recipe_ingredients WHERE recipe_id = ?",[deleted]);
     assert.equal(ingredients.total,0);
     assert.deepEqual(await snapshot(),before,"All six original tables must retain identical rows after temporary fixture cleanup");
-    console.log("REAL MYSQL PASS: login, roles, identities, pagination, quantity, ratings, cascade; all six original table rows preserved");
+    console.log("REAL SQL DATABASE PASS: login, roles, identities, pagination, quantity, ratings, cascade; all six original table rows preserved");
   } finally {
     if (adminRecipeId) await pool.query("DELETE FROM recipes WHERE id = ?",[adminRecipeId]);
     if (recipeId) await pool.query("DELETE FROM recipes WHERE id = ?",[recipeId]);

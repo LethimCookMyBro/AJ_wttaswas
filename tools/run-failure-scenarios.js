@@ -44,8 +44,8 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const scenarios = [
   {
-    id: "S1", name: "เรียก URL ที่ไม่มีอยู่จริง (DNS ไม่พบโฮสต์)", how: "ตั้ง baseUrl เป็น http://recipe-api-unreachable.invalid",
-    expect: { source: "fallback", reason: "NETWORK_ERROR", attempts: 3, minMs: 900, maxMs: 4000 },
+    id: "S1", name: "เรียกโฮสต์ที่เข้าถึงไม่ได้ (DNS/proxy อาจคืน network error หรือ timeout)", how: "ตั้ง baseUrl เป็น http://recipe-api-unreachable.invalid",
+    expect: { source: "fallback", reason: ["NETWORK_ERROR", "TIMEOUT"], attempts: 3, minMs: 900, maxMs: 12000 },
     run: () => measure("http://recipe-api-unreachable.invalid"),
   },
   {
@@ -102,7 +102,7 @@ const scenarios = [
     process.stdout.write(`${s.id} ${s.name} ... `);
     const out = await s.run();
     const e = s.expect;
-    const pass = out.result.source === e.source && out.result.reason === e.reason && out.result.attempts === e.attempts &&
+    const pass = out.result.source === e.source && (Array.isArray(e.reason) ? e.reason.includes(out.result.reason) : out.result.reason === e.reason) && out.result.attempts === e.attempts &&
       (e.hits === undefined || out.hits === e.hits) && out.ms >= e.minMs && out.ms <= e.maxMs;
     console.log(`${pass ? "PASS" : "FAIL"} (${out.ms} ms)`);
     rows.push({

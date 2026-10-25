@@ -19,23 +19,30 @@ const FALLBACK_IDEAS = [
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-function toNumber(value, fallback) {
+function boundedInteger(value, fallback, min, max) {
+  if (value === undefined || value === null || String(value).trim() === "") return fallback;
   const n = Number(value);
-  return Number.isFinite(n) && n >= 0 ? n : fallback;
+  return Number.isInteger(n) && n >= min && n <= max ? n : fallback;
 }
 
 // อ่านค่าตอนเรียกใช้ทุกครั้ง เพื่อให้เปลี่ยนค่าด้วย environment variable ตอนทดสอบได้
 function readConfig(overrides = {}) {
-  return {
+  const config = {
     baseUrl: process.env.EXTERNAL_API_BASE_URL || DEFAULTS.baseUrl,
-    timeoutMs: toNumber(process.env.EXTERNAL_API_TIMEOUT_MS, DEFAULTS.timeoutMs),
-    maxRetries: toNumber(process.env.EXTERNAL_API_MAX_RETRIES, DEFAULTS.maxRetries),
-    backoffMs: toNumber(process.env.EXTERNAL_API_BACKOFF_MS, DEFAULTS.backoffMs),
+    timeoutMs: process.env.EXTERNAL_API_TIMEOUT_MS,
+    maxRetries: process.env.EXTERNAL_API_MAX_RETRIES,
+    backoffMs: process.env.EXTERNAL_API_BACKOFF_MS,
     maxIdeas: DEFAULTS.maxIdeas,
     sleep,
     logger: console,
     ...overrides,
   };
+  // Axios treats timeout=0 as unlimited. Invalid environment values must not
+  // disable deadlines or accidentally produce millions of retries.
+  config.timeoutMs = boundedInteger(config.timeoutMs, DEFAULTS.timeoutMs, 1, 10000);
+  config.maxRetries = boundedInteger(config.maxRetries, DEFAULTS.maxRetries, 0, 3);
+  config.backoffMs = boundedInteger(config.backoffMs, DEFAULTS.backoffMs, 0, 1000);
+  return config;
 }
 
 // แยกประเภทความล้มเหลว และบอกว่าควรลองใหม่หรือไม่
@@ -46,7 +53,7 @@ function classify(error) {
     if (status >= 500) return { reason: "UPSTREAM_5XX", status, retryable: true };
     return { reason: "UPSTREAM_4XX", status, retryable: false };
   }
-  if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
+  if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT" || error.code === "ERR_CANCELED") {
     return { reason: "TIMEOUT", status: null, retryable: true };
   }
   return { reason: "NETWORK_ERROR", status: null, retryable: true, code: error.code || null };
@@ -67,7 +74,12 @@ async function getWithRetry(url, params, cfg) {
   for (let attempt = 1; attempt <= totalTries; attempt += 1) {
     const startedAt = Date.now();
     try {
-      const response = await axios.get(url, { params, timeout: cfg.timeoutMs });
+      const response = await axios.get(url, {
+        params, timeout: cfg.timeoutMs,
+        // Socket inactivity timeout alone does not bound DNS/connect/trickled bodies.
+        signal: AbortSignal.timeout(cfg.timeoutMs),
+        maxContentLength: 1024 * 1024,
+      });
       attempts.push({ attempt, outcome: "success", status: response.status, ms: Date.now() - startedAt });
       return { data: response.data, attempts };
     } catch (error) {

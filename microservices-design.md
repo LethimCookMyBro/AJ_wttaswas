@@ -4,7 +4,7 @@
 
 ## สถานะที่รันจริง
 
-Express เสิร์ฟ frontend และ 12 API operations ใน process เดียว. Recipes, categories, ingredients และ ratings ใช้ pool ร่วมจาก `src/db.js`. `src/services/external-api.js` แยกความรู้เรื่อง TheMealDB และ resilience. Demo เลือก MySQL จริงหรือ in-memory adapterได้. รอบรับรองFinalใช้ MySQL8.0.46บนloopback33317. `/api/v1/system` บอกขอบเขตทางธุรกิจเท่านั้น. ยังไม่มี API Gateway แยก process หรือ message broker.
+Express เสิร์ฟ frontend และ 12 API operations ใน process เดียว. Recipes, categories, ingredients และ ratings ใช้ pool ร่วมจาก `src/db.js`. `src/services/external-api.js` แยกความรู้เรื่อง TheMealDB และ resilience. Demo เลือก MySQL จริงหรือ in-memory adapterได้. บันทึกเดิมเคยอ้าง MySQL8.0.46 บน loopback33317 แต่รอบ25 ตุลาคม2026 ยังไม่ใช้เป็นหลักฐานใหม่; สถานะทดสอบล่าสุดอยู่ใน docs/backend-verification.md. `/api/v1/system` บอกขอบเขตทางธุรกิจเท่านั้น. ยังไม่มี API Gateway แยก process หรือ message broker.
 
 ## ตารางแบ่งบริการตามธุรกิจ
 
@@ -60,8 +60,8 @@ Event ที่ออกแบบต้องมี `eventId`, `recipeId`, `occu
 | Reviews → Catalog lookup | เสนอ 500ms | GET retry 1 ครั้ง | 503 ให้ลองใหม่ ไม่บันทึกรีวิวเมื่อยืนยัน recipe ไม่ได้ | แบบออกแบบ |
 | Event consumers | เสนอ ack ภายใน 5s | exponential backoff และจำกัด 5 attempts | dead-letter queue พร้อมแจ้งผู้ดูแล ไม่ทิ้ง event เงียบ | แบบออกแบบ |
 
-Timeout ในตารางคนละขอบเขต. Demo ภายนอกมี budgetประมาณ2700msและค่าเริ่มต้นประมาณ9900msก่อนoverhead. Browserให้meal-ideas12000msและAPIอื่น6000ms. Reviewerทดสอบกับupstreamไม่ตอบจริงแล้วUIได้รับfallback TIMEOUT/attempts3ภายในประมาณ10วินาที. หากเพิ่มbudgetผ่านenvต้องปรับทั้งเส้นทางและตรวจใหม่. การคำนวณนี้ไม่ใช่ผลloadtest.
+Timeout ในตารางคนละขอบเขต. Demo ภายนอกมี budgetประมาณ2700msและค่าเริ่มต้นประมาณ9900msก่อนoverhead. Browserให้meal-ideas12000msและAPIอื่น6000ms. รอบ25 ตุลาคม2026 controlled HTTP test ยืนยัน fallback TIMEOUT/attempts3 ประมาณ9.9วินาที; VM UI test ตรวจ timeout12000ms แต่ยังไม่ใช่หลักฐาน rendered browser. หากเพิ่มbudgetผ่านenvต้องปรับทั้งเส้นทางและตรวจใหม่. การคำนวณนี้ไม่ใช่ผลloadtest.
 
 ## Trade-off และสิ่งที่ยังต้องทำ
 
-Monolith ช่วยให้รันสาธิตได้ด้วยคำสั่งเดียวและคง FK/CASCADE ใน DB เดียว. การแยกบริการทำให้ deploy/scale แยกได้ แต่เพิ่ม network failure, eventual consistency, observability และภาระดูแล. จึงส่งแบบแบ่ง context ที่ตรวจสอบเหตุผลได้ โดยไม่เพิ่ม broker หรือ containers ที่ยังไม่มีหลักฐานใช้งาน. auth/ownership และ disposable MySQL integration tests ทำและตรวจแล้ว. ก่อนแยกจริงยังต้องมี service contract tests, outbox/idempotency, tracing และ shared state strategy.
+Monolith ช่วยให้รันสาธิตได้ด้วยคำสั่งเดียวและคง FK/CASCADE ใน DB เดียว. การแยกบริการทำให้ deploy/scale แยกได้ แต่เพิ่ม network failure, eventual consistency, observability และภาระดูแล. จึงส่งแบบแบ่ง context ที่ตรวจสอบเหตุผลได้ โดยไม่เพิ่ม broker หรือ containers ที่ยังไม่มีหลักฐานใช้งาน. auth/ownership ผ่าน automated tests; isolated real-database integration ของรอบปัจจุบันกำลังตรวจและจะรายงานชนิด DB อย่างชัดเจน ไม่ยกผลเก่ามาอ้างเป็นผลใหม่. ก่อนแยกจริงยังต้องมี service contract tests, outbox/idempotency, tracing และ shared state strategy.

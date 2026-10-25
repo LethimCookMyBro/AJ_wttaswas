@@ -1,0 +1,14 @@
+{
+  "database": "MariaDB",
+  "exactMySQL8": false,
+  "source": "Official signed Debian snapshot packages, extracted to /tmp; no system install",
+  "scope": "Disposable local loopback process only; no production connection",
+  "results": [
+    {
+      "name": "disposable server terminated; no DB listener retained",
+      "result": "PASS"
+    }
+  ],
+  "completed": false,
+  "failure": "Kernel denied optional UNIX socket creation (Operation not permitted); server aborted before any schema or test queries."
+}

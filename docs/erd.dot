@@ -1,0 +1,18 @@
+digraph ERD {
+ graph [rankdir=LR, bgcolor="#FBF8F1", pad="0.45", nodesep="0.6", ranksep="1.1", splines=polyline, label="Krua Baeng Pan | Business schema + password migration", labelloc=t, fontsize=24, fontname="DejaVu Sans"];
+ node [shape=plain, fontname="DejaVu Sans", fontsize=14];
+ edge [color="#60725B", fontname="DejaVu Sans", fontsize=11, arrowsize=.8];
+ categories [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="10" BGCOLOR="white"><TR><TD BGCOLOR="#DCE5D5"><B>categories</B></TD></TR><TR><TD ALIGN="LEFT">PK id : INT<BR ALIGN="LEFT"/>UQ name : VARCHAR(100)<BR ALIGN="LEFT"/>description : TEXT<BR ALIGN="LEFT"/>created_at : TIMESTAMP</TD></TR></TABLE>>];
+ users [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="10" BGCOLOR="white"><TR><TD BGCOLOR="#DCE5D5"><B>users</B></TD></TR><TR><TD ALIGN="LEFT">PK id : INT<BR ALIGN="LEFT"/>UQ username : VARCHAR(50)<BR ALIGN="LEFT"/>UQ email : VARCHAR(100)<BR ALIGN="LEFT"/>role : member / chef / admin<BR ALIGN="LEFT"/>created_at : TIMESTAMP<BR ALIGN="LEFT"/>password_hash : VARCHAR(255)*</TD></TR></TABLE>>];
+ recipes [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="10" BGCOLOR="white"><TR><TD BGCOLOR="#EBCAB0"><B>recipes</B></TD></TR><TR><TD ALIGN="LEFT">PK id : INT<BR ALIGN="LEFT"/>name : VARCHAR(150)<BR ALIGN="LEFT"/>FK category_id : INT<BR ALIGN="LEFT"/>FK author_id : INT<BR ALIGN="LEFT"/>instructions : TEXT<BR ALIGN="LEFT"/>cook_time_minutes : INT<BR ALIGN="LEFT"/>difficulty : easy / medium / hard<BR ALIGN="LEFT"/>created_at : TIMESTAMP</TD></TR></TABLE>>];
+ ingredients [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="10" BGCOLOR="white"><TR><TD BGCOLOR="#DCE5D5"><B>ingredients</B></TD></TR><TR><TD ALIGN="LEFT">PK id : INT<BR ALIGN="LEFT"/>UQ name : VARCHAR(100)<BR ALIGN="LEFT"/>unit_type : VARCHAR(50)</TD></TR></TABLE>>];
+ ri [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="10" BGCOLOR="white"><TR><TD BGCOLOR="#EBCAB0"><B>recipe_ingredients</B></TD></TR><TR><TD ALIGN="LEFT">PK id : INT<BR ALIGN="LEFT"/>FK recipe_id : INT<BR ALIGN="LEFT"/>FK ingredient_id : INT<BR ALIGN="LEFT"/>quantity : DECIMAL(8,2)<BR ALIGN="LEFT"/>unit : VARCHAR(50)<BR ALIGN="LEFT"/>UQ (recipe_id, ingredient_id)</TD></TR></TABLE>>];
+ ratings [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="10" BGCOLOR="white"><TR><TD BGCOLOR="#EBCAB0"><B>ratings</B></TD></TR><TR><TD ALIGN="LEFT">PK id : INT<BR ALIGN="LEFT"/>FK recipe_id : INT<BR ALIGN="LEFT"/>FK user_id : INT<BR ALIGN="LEFT"/>rating_score : TINYINT, CHECK 1..5<BR ALIGN="LEFT"/>review_comment : TEXT<BR ALIGN="LEFT"/>created_at : TIMESTAMP<BR ALIGN="LEFT"/>UQ (recipe_id, user_id)</TD></TR></TABLE>>];
+ categories -> recipes [label="1 : many\ncategory_id\nON DELETE RESTRICT"];
+ users -> recipes [label="1 : many\nauthor_id\nON DELETE CASCADE"];
+ recipes -> ri [label="1 : many\nrecipe_id\nON DELETE CASCADE"];
+ ingredients -> ri [label="1 : many\ningredient_id\nON DELETE RESTRICT"];
+ recipes -> ratings [label="1 : many\nrecipe_id\nON DELETE CASCADE"];
+ users -> ratings [label="1 : many\nuser_id\nON DELETE CASCADE"];
+ note [shape=plaintext, label="PK = primary key   FK = foreign key   UQ = unique\n* password_hash added by migration 001-password-hash.sql\nBusiness tables shown. Migration ledger is operational metadata.", fontsize=12];
+}

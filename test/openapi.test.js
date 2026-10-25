@@ -65,3 +65,12 @@ describe("Swagger UI", () => {
     expect(res.text).toBe(fs.readFileSync(specPath, "utf8"));
   });
 });
+
+test("shared error schema does not mislabel every failure as recipe-not-found", () => {
+  const YAML = require("yaml");
+  const fs = require("node:fs");
+  const spec = YAML.parse(fs.readFileSync(require("node:path").join(__dirname, "../openapi.yaml"), "utf8"));
+  expect(spec.components.schemas.Error.properties.error.properties.code).not.toHaveProperty("example");
+  expect(spec.components.responses.RateLimited.content["application/json"].example.error.code).toBe("RATE_LIMITED");
+  expect(spec.components.responses.PayloadTooLarge.content["application/json"].example.error.code).toBe("PAYLOAD_TOO_LARGE");
+});

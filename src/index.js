@@ -78,6 +78,10 @@ const errorBody = (code, message) => ({ error: { code, message } });
 const parseId = (value) => (/^[1-9]\d{0,9}$/.test(String(value)) ? Number(value) : null);
 const isPositiveInt = (value) => Number.isInteger(value) && value > 0;
 const isText = (value, max) => typeof value === "string" && value.trim().length > 0 && value.length <= max;
+const isIngredient = (value) => value && typeof value === "object" && !Array.isArray(value) &&
+  isPositiveInt(value.ingredientId) && typeof value.quantity === "number" &&
+  value.quantity >= 0.01 && value.quantity <= 999999.99 &&
+  Number(value.quantity.toFixed(2)) === value.quantity && isText(value.unit, 50);
 const DIFFICULTIES = ["easy", "medium", "hard"];
 
 const loginLimiter = rateLimit({ windowMs: 60000, limit: 10, standardHeaders: "draft-8", legacyHeaders: false, message: errorBody("RATE_LIMITED", "Too many login attempts") });
@@ -170,7 +174,7 @@ app.get("/api/v1/recipes/:id", async (req, res, next) => {
       return res.status(400).json(errorBody("INVALID_ID", "id ต้องเป็นจำนวนเต็มบวก"));
     }
     const sqlRecipe = `
-      SELECT r.id, r.name, r.instructions, r.cook_time_minutes, r.difficulty, r.category_id, c.name AS category_name
+      SELECT r.id, r.name, r.instructions, r.author_id, r.cook_time_minutes, r.difficulty, r.category_id, c.name AS category_name
       FROM recipes r
       JOIN categories c ON r.category_id = c.id
       WHERE r.id = ?
@@ -200,9 +204,9 @@ app.get("/api/v1/recipes/:id", async (req, res, next) => {
 
 // POST /api/v1/recipes - Create new recipe
 app.post("/api/v1/recipes", authenticate, recipeWriter, async (req, res, next) => {
-  const { name, categoryId, instructions, cookTimeMinutes, difficulty } = req.body || {};
+  const { name, categoryId, instructions, cookTimeMinutes, difficulty, ingredients = [] } = req.body || {};
   const authorId = req.user.id;
-  if (req.body.authorId !== undefined && req.body.authorId !== authorId) return res.status(403).json(errorBody("IDENTITY_MISMATCH", "authorId must match token user"));
+  if (req.body?.authorId !== undefined && req.body.authorId !== authorId) return res.status(403).json(errorBody("IDENTITY_MISMATCH", "authorId must match token user"));
 
   if (!name || !categoryId || !instructions) {
     return res.status(400).json(errorBody("VALIDATION_ERROR", "กรุณาระบุ name, categoryId และ instructions ให้ครบถ้วน"));
@@ -218,12 +222,35 @@ app.post("/api/v1/recipes", authenticate, recipeWriter, async (req, res, next) =
     );
   }
 
+  if (!Array.isArray(ingredients) || ingredients.length > 50 || !ingredients.every(isIngredient) ||
+      new Set(ingredients.map((line) => line.ingredientId)).size !== ingredients.length) {
+    return res.status(400).json(errorBody("VALIDATION_ERROR", "วัตถุดิบต้องเป็นรายการไม่เกิน 50 รายการ ไม่ซ้ำกัน และระบุ ingredientId, quantity (0.01 ถึง 999999.99 ทศนิยมไม่เกิน 2 ตำแหน่ง) และ unit ให้ถูกต้อง"));
+  }
+
+  let connection;
+  let transactionStarted = false;
   try {
     const sql = `
       INSERT INTO recipes (name, category_id, author_id, instructions, cook_time_minutes, difficulty)
       VALUES (?, ?, ?, ?, ?, ?)
     `;
-    const [result] = await pool.query(sql, [name, categoryId, authorId, instructions, cookTimeMinutes || 15, difficulty || "easy"]);
+    // Keep the original one-statement path when no ingredients are supplied.
+    // A transaction uses one dedicated connection, never pool-level queries.
+    if (ingredients.length) {
+      connection = await pool.getConnection();
+      await connection.beginTransaction();
+      transactionStarted = true;
+    }
+    const executor = connection || pool;
+    const [result] = await executor.query(sql, [name, categoryId, authorId, instructions, cookTimeMinutes || 15, difficulty || "easy"]);
+    for (const line of ingredients) {
+      await executor.query("INSERT INTO recipe_ingredients (recipe_id, ingredient_id, quantity, unit) VALUES (?, ?, ?, ?)",
+        [result.insertId, line.ingredientId, line.quantity, line.unit]);
+    }
+    if (connection) {
+      await connection.commit();
+      transactionStarted = false;
+    }
 
     res.status(201).json({
       message: "สร้างสูตรอาหารสำเร็จ",
@@ -237,10 +264,21 @@ app.post("/api/v1/recipes", authenticate, recipeWriter, async (req, res, next) =
       },
     });
   } catch (err) {
+    if (transactionStarted) {
+      try { await connection.rollback(); }
+      catch (rollbackError) {
+        console.error("Recipe transaction rollback failed", rollbackError.code || "UNKNOWN");
+        // Never lend a connection with an uncertain transaction state to another request.
+        connection.destroy();
+        connection = null;
+      }
+    }
     if (err.code === "ER_NO_REFERENCED_ROW_2") {
-      return res.status(404).json(errorBody("REFERENCE_NOT_FOUND", "ไม่พบหมวดหมู่หรือผู้เขียนที่ระบุ"));
+      return res.status(404).json(errorBody("REFERENCE_NOT_FOUND", "ไม่พบหมวดหมู่ ผู้เขียน หรือวัตถุดิบที่ระบุ"));
     }
     next(err);
+  } finally {
+    if (connection) connection.release();
   }
 });
 
@@ -299,7 +337,7 @@ app.post("/api/v1/recipes/:id/ingredients", authenticate, recipeWriter, ownsReci
     return res.status(400).json(errorBody("INVALID_ID", "id ต้องเป็นจำนวนเต็มบวก"));
   }
   const { ingredientId, quantity, unit } = req.body || {};
-  if (!isPositiveInt(ingredientId) || typeof quantity !== "number" || !(quantity >= 0.01 && quantity <= 999999.99) || Number(quantity.toFixed(2)) !== quantity || !isText(unit, 50)) {
+  if (!isIngredient({ ingredientId, quantity, unit })) {
     return res.status(400).json(errorBody("VALIDATION_ERROR", "กรุณาระบุ ingredientId (จำนวนเต็มบวก), quantity (0.01 ถึง 999999.99) และ unit"));
   }
 
@@ -376,7 +414,7 @@ app.post("/api/v1/recipes/:id/ratings", authenticate, async (req, res, next) => 
   }
   const { ratingScore, reviewComment } = req.body || {};
   const userId = req.user.id;
-  if (req.body.userId !== undefined && req.body.userId !== userId) return res.status(403).json(errorBody("IDENTITY_MISMATCH", "userId must match token user"));
+  if (req.body?.userId !== undefined && req.body.userId !== userId) return res.status(403).json(errorBody("IDENTITY_MISMATCH", "userId must match token user"));
   if (
     !Number.isInteger(ratingScore) || ratingScore < 1 || ratingScore > 5 ||
     (reviewComment !== undefined && !isText(reviewComment, 2000))

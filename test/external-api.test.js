@@ -146,3 +146,52 @@ describe("getMealIdeas: fallback", () => {
     expect(result.message).toMatch(/ไม่สามารถเชื่อมต่อ/);
   });
 });
+
+describe("bounded resilience configuration", () => {
+  const { readConfig, DEFAULTS } = require("../src/services/external-api");
+  test.each(["", "0", "-1", "Infinity", "999999999", "1.5"])("timeout %j cannot disable or inflate the timeout", (value) => {
+    const previous = process.env.EXTERNAL_API_TIMEOUT_MS;
+    try {
+      process.env.EXTERNAL_API_TIMEOUT_MS = value;
+      expect(readConfig().timeoutMs).toBe(DEFAULTS.timeoutMs);
+    } finally {
+      if (previous === undefined) delete process.env.EXTERNAL_API_TIMEOUT_MS;
+      else process.env.EXTERNAL_API_TIMEOUT_MS = previous;
+    }
+  });
+  test.each(["-1", "Infinity", "999999999", "1.5"])("retry count %j is bounded and integral", (value) => {
+    const previous = process.env.EXTERNAL_API_MAX_RETRIES;
+    try {
+      process.env.EXTERNAL_API_MAX_RETRIES = value;
+      expect(readConfig().maxRetries).toBe(DEFAULTS.maxRetries);
+    } finally {
+      if (previous === undefined) delete process.env.EXTERNAL_API_MAX_RETRIES;
+      else process.env.EXTERNAL_API_MAX_RETRIES = previous;
+    }
+  });
+  test("oversized upstream response becomes fallback instead of an unbounded allocation", async () => {
+    const fake = await startFakeServer((req, res) => json(res, 200, { meals: [{ idMeal: "1", strMeal: "x".repeat(1024 * 1024 + 1), strMealThumb: null }] }));
+    try {
+      expect(await getMealIdeas("chicken", options(fake.url, { maxRetries: 0 }).opts)).toMatchObject({ source: "fallback", degraded: true });
+    } finally { await fake.close(); }
+  });
+});
+
+test("absolute attempt deadline stops an upstream that keeps trickling response bytes", async () => {
+  let timer;
+  const fake = await startFakeServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.write('{"meals":');
+    let writes = 0;
+    timer = setInterval(() => {
+      if (++writes < 12) res.write(" ");
+      else { clearInterval(timer); res.end("[]}"); }
+    }, 30);
+  });
+  const startedAt = Date.now();
+  try {
+    const result = await getMealIdeas("chicken", options(fake.url, { timeoutMs: 120, maxRetries: 0 }).opts);
+    expect(result).toMatchObject({ source: "fallback", reason: "TIMEOUT", attempts: 1 });
+    expect(Date.now() - startedAt).toBeLessThan(350);
+  } finally { clearInterval(timer); await fake.close(); }
+});
