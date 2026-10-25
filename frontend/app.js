@@ -69,10 +69,22 @@ function renderRecipes() {
   }));
   if (!visible.length) {
     const empty = element('li', 'empty-state');
-    empty.append(element('h3', '', 'ยังไม่เจอสูตรที่คุณหา'), element('p', '', 'ลองเปลี่ยนคำค้นหรือหมวดหมู่ หรือแบ่งปันสูตรแรกของคุณ'));
-    const link = element('a', 'button secondary', 'เพิ่มสูตรอาหาร');
-    link.href = '#create';
-    empty.append(link);
+    const filtered = !!(state.search || state.filter || state.difficulty);
+    empty.append(element('h3', '', filtered ? 'ยังไม่เจอสูตรที่คุณหา' : 'ครัวยังไม่มีสูตรอาหาร'), element('p', '', filtered ? 'ลองเปลี่ยนคำค้น หมวดหมู่ หรือความยาก หรือเริ่มใหม่ด้วยสูตรทั้งหมด' : 'ระหว่างรอสูตรใหม่ ลองหาไอเดียจากวัตถุดิบที่มีได้'));
+    if (filtered) {
+      const reset = element('button', 'button primary', 'ล้างตัวกรองทั้งหมด');
+      reset.type = 'button';
+      reset.addEventListener('click', resetRecipeFilters);
+      empty.append(reset);
+    } else {
+      const link = element('a', 'button secondary', 'หาไอเดียเมนู');
+      link.href = '#ideas';
+      empty.append(link);
+    }
+    if (state.session && ['chef', 'admin'].includes(state.session.user.role)) {
+      const create = element('a', 'button secondary', 'แบ่งปันสูตรอาหาร');
+      create.href = '#create'; empty.append(create);
+    }
     byId('recipe-list').append(empty);
   }
   for (const chip of byId('category-chips').querySelectorAll('button')) {
@@ -84,6 +96,12 @@ function renderRecipes() {
   byId('page-status').textContent = state.pagination.totalPages ? `หน้า ${state.page} จาก ${state.pagination.totalPages}` : 'ไม่มีรายการ';
   byId('previous-page').disabled = state.page <= 1;
   byId('next-page').disabled = state.page >= state.pagination.totalPages;
+}
+
+async function resetRecipeFilters() {
+  state.search = ''; state.filter = ''; state.difficulty = ''; state.page = 1;
+  byId('recipe-search').value = ''; byId('category-filter').value = ''; byId('difficulty-filter').value = '';
+  await loadRecipes();
 }
 
 async function loadRecipes() {
@@ -101,7 +119,7 @@ async function loadRecipes() {
     const result = await api(`/recipes?${query}`, {}, true);
     if (request !== state.listRequest) return;
     state.recipes = result.data;
-    updateFeatured(result.data[0]);
+    if (!state.search && !state.filter && !state.difficulty && state.page === 1) updateFeatured(result.data[0]);
     state.pagination = result.pagination;
     renderRecipes();
   } catch (error) {
@@ -376,6 +394,7 @@ function arrowIcon() {
 }
 
 function updateFeatured(recipe) {
+  state.featuredId = recipe?.id || null;
   const link = byId('featured-recipe');
   link.hidden = !recipe;
   if (!recipe) return;
@@ -531,6 +550,7 @@ byId('delete-recipe').addEventListener('click', async () => {
   status('delete-status', 'กำลังลบสูตร...');
   try {
     await api(`/recipes/${id}`, { method: 'DELETE' });
+    if (state.featuredId === id) updateFeatured(null);
     if (state.selectedId === id && state.detailRequest === request) state.currentRecipe = null;
     if (location.hash === `#recipe/${id}`) location.hash = '#recipes';
     else status('app-notice', 'ลบสูตรที่เลือกแล้ว');

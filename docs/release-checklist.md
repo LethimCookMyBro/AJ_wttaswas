@@ -8,8 +8,8 @@ The tracked candidate patch was applied and reversed in a disposable clean basel
 
 ## Automated evidence
 
-- 185 tests across 12 suites pass; 9 additional VM UI behavior scenarios pass.
-- 20 guide tests cover request sequencing, errors, all static links/assets and anchor consistency.
+- 196 tests across 12 suites pass; 10 additional VM UI behavior scenarios pass.
+- 31 guide tests cover request sequencing, errors, all static links/assets and anchor consistency.
 - Real disposable MariaDB11.8.6:14 checkpoint groups pass, including actual constraints, migrations, atomic create rollback and concurrent failure isolation. Exact MySQL8 is not tested this round.
 - 15 Postman request/response examples recorded against real MariaDB with a controlled localhost external upstream. Tokens redacted.
 - Failure scenarios S1–S8 pass. The final live TheMealDB baseline S0 degraded, so the overall report is not all-green; earlier live success is historical evidence only.
@@ -17,8 +17,8 @@ The tracked candidate patch was applied and reversed in a disposable clean basel
 
 ## Release gates / remaining work
 
-- Predeployment browser rendering blocked by execution restrictions and preview connectivity. Do not label source/VM checks as visual QA.
-- Confirm deployment decision with owner of this task; main push currently held.
+- Predeployment browser rendering was blocked. Postdeployment actual desktop and narrow-layout inspection found header/grid and empty-state issues; the follow-up fixes need live retesting.
+- First release9aaac60 published with explicit owner approval; Railway reported success. Exact assets and public smoke evidence are in deployment-9aaac60.json.
 - After deployment, verify health, actual DB storage, API/detail/Swagger, exact asset hashes and deployed commit where platform evidence exists.
 - Immediately inspect live desktop/mobile and keyboard behavior; record screenshots with exact viewport limitations. No mutation QA against production.
 - If severe runtime regression occurs, revert only the release commit, verify restored baseline hashes/health and report recovery accurately.

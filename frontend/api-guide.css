@@ -42,3 +42,31 @@
 .live-result h4,.live-result p,.live-status{overflow-wrap:anywhere}
 .guide-page pre:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 @media(max-width:760px){.guide-header nav{flex-wrap:wrap;gap:4px 20px}.live-next .button{max-width:100%;white-space:normal;text-align:center}.live-request code{min-width:0}}
+/* Explanatory interaction: the reader chooses the pace, not a scroll timeline. */
+.flow-prompt{margin:26px 0 0;color:var(--muted);font-size:15px}
+.flow-disclosures{gap:18px;margin-top:18px}.flow-disclosures li{display:block;min-width:0}
+.flow-disclosures details{border-block:1px solid #cccfc3;padding:0 0 12px}
+.flow-disclosures summary{cursor:pointer;font-weight:600;min-height:64px;padding:16px 0;font-size:17px;list-style:none;display:flex;align-items:center;gap:10px}
+.flow-disclosures summary::-webkit-details-marker{display:none}
+.flow-disclosures summary::after{content:'';margin-left:auto;width:8px;height:8px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);transition:transform 180ms ease-out;flex-shrink:0}
+.flow-disclosures details[open] summary::after{transform:rotate(225deg)}
+.flow-disclosures details[open] summary{color:var(--accent)}
+.flow-disclosures summary span{font-size:13px;font-variant-numeric:tabular-nums;color:var(--accent)}
+.flow-disclosures p{margin:0 0 12px}.flow-disclosures .flow-example{font-size:13px;color:var(--ink)}
+.demo-route{margin:32px 0}.demo-route>p{margin:12px 0;color:var(--muted);max-width:70ch}
+.demo-sequence{list-style:none;padding:0;margin:20px 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 30px}
+.demo-sequence li{display:grid;gap:8px;padding:22px 0;border-bottom:1px solid var(--line);align-content:start}
+.demo-sequence strong{font-size:17px}.demo-sequence span{font-size:15px;color:var(--muted)}
+.verify-form{display:flex;align-items:flex-start;gap:20px;max-width:760px}.verify-form>div{flex:1;min-width:0}.verify-form .button{margin-top:31px}.verify-form input{margin-bottom:0}.verify-form .guide-tip{margin-top:8px}
+#verify{scroll-margin-top:88px}#verify-result h3{overflow-wrap:anywhere;margin-bottom:12px}
+.live-steps button{transition:background-color 160ms ease-out,color 160ms ease-out}
+@media(prefers-reduced-motion:no-preference){.flow-disclosures details[open]>div{animation:guide-explanation 180ms ease-out}@keyframes guide-explanation{from{opacity:.8;transform:translateY(3px)}to{opacity:1;transform:none}}}
+@media(max-width:760px){.demo-sequence{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px}.verify-form{flex-direction:column;gap:0}.verify-form>div{width:100%}.verify-form .button{margin-top:8px}.flow-disclosures summary{min-height:60px}}
+@media(max-width:420px){.demo-sequence{grid-template-columns:minmax(0,1fr)}}
+.guide-arrow{display:inline-block;width:18px;height:18px;vertical-align:-3px;flex-shrink:0}
+/* These are full-page captures; crop only in the preview, preserve the original file. */
+.hero-product>img{aspect-ratio:1.25;object-fit:cover;object-position:top;height:auto}
+.image-feature figure img{object-fit:cover;object-position:top}
+.live-instructions{padding-left:24px;margin:12px 0 24px;max-width:70ch}
+.live-instructions li{padding:8px 0 12px 6px;border-bottom:1px solid var(--line);overflow-wrap:anywhere;white-space:pre-wrap}
+.live-instructions li::marker{color:var(--accent);font-weight:600}

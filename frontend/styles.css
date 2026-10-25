@@ -613,3 +613,25 @@ to{transform:scale(1)}
 .detail-photo{min-height:280px;background:#e7e8df}
 
 .ingredient-check>span,.ingredient-check>strong{overflow-wrap:anywhere;min-width:0}
+
+/* Narrow navigation uses explicit rows, never squeezed Thai words. */
+@media(max-width:760px){
+  .masthead{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px;row-gap:10px}
+  .masthead .brand{grid-column:1;grid-row:1;min-width:0}
+  .masthead .nav-create{grid-column:2;grid-row:1;margin:0;justify-self:end}
+  .masthead nav{grid-column:1;grid-row:2;min-width:0;width:100%;flex:none;gap:16px;order:initial}
+  .masthead nav>a{white-space:nowrap;flex-shrink:0}
+  .session-controls{grid-column:2;grid-row:2;justify-self:end;order:initial;min-width:0}
+  .masthead:has(.session-user:not([hidden])) nav{grid-column:1/-1}
+  .masthead:has(.session-user:not([hidden])) .session-controls{grid-column:1/-1;grid-row:3}
+}
+@media(max-width:600px){
+  .recipe-grid{grid-template-columns:1fr;gap:28px}
+  .card-content h3{overflow-wrap:anywhere}
+}
+@media(max-width:359px){
+  .masthead nav{grid-column:1/-1;gap:18px;justify-content:space-between}
+  .session-controls{grid-column:1/-1;grid-row:3}
+}
+.empty-state .button{margin:16px 6px 0}
+@media(max-width:600px){.empty-state{padding:26px 20px}.empty-state .button{max-width:100%;white-space:normal;text-align:center}}

@@ -1,35 +1,41 @@
-# Recipe management
+# ครัวแบ่งปัน
 
 <!-- impeccable:product-schema 1 -->
 
 ## Platform
 
-web
+Thai recipe web application with a public deployed service and a separate classroom demonstration workflow.
 
 ## Stack
 
-Existing Express 4 backend. Plain HTML/CSS/JavaScript frontend, per the Phase 3 assignment.
+Existing Express 4, MySQL, and plain HTML/CSS/JavaScript. Preserve the shared API contract and schema; no framework migration for visual novelty.
 
-## Users
+## Users and jobs
 
-Course presenter demonstrates the recipe system to the instructor. Inferred secondary audience from requirement.md is people browsing and sharing recipes.
+- Visitors discover recipes and follow ingredients/instructions without an account.
+- Members rate and review recipes.
+- Chefs create recipes with ingredients and manage their own recipes.
+- Admins manage recipes across authors.
+- The student presenter explains the same real product to the instructor in 3–5 minutes; documentation serves beginner, guided-demo and technical-reference audiences separately.
 
 ## Product purpose
 
-Read a recipe, create a recipe, and submit a review through the project's actual HTTP API.
+Help someone answer “มื้อนี้ทำอะไรดี?”, choose a recipe, cook it, and share a recipe or review through the actual API. The homepage is a food product, not a coursework report. The API guide explains the product without forcing ordinary users to read technical detail.
 
-## Operating context
+## Operating context and evidence
 
-Local classroom demonstration lasting 3 to 4 minutes. Final verification uses synthetic fixtures in isolated MySQL on loopback33317. A separate in-memory fallback demo resets on restart. This is not a production service.
+Public deployment uses MySQL. Test mutations use only isolated fixtures. The 25 October 2026 verification includes 196 tests, 10 VM frontend scenarios and 14 real disposable MariaDB11.8.6 checkpoints; exact MySQL8 compatibility is not newly established by that run. A separate in-memory demo discards edits on restart. Recorded HTTP examples and limitations are in docs/.
 
 ## Capabilities and constraints
 
-Categories, recipes, ingredients, ratings and TheMealDB integration remain. One process serves the browser and API. Login uses JWT and server-side roles/ownership. Search, filters, sorting and pagination operate through the API. MySQL migration and restart persistence were verified separately from mocked Jest coverage.
+Six primary use cases: browse, detail, create, assign ingredients, rate/review, delete. Optional recipe ingredients save atomically. JWT identity, roles and ownership are server-enforced. Search, category/difficulty filters, sorting and pagination operate through the API. TheMealDB is supplementary and bounded by timeout/retries with explicitly labeled fallback.
 
-## Evidence on hand
+Week13 requires a microservices design, not a deployed distributed rewrite. Runtime remains a modular monolith; proposed service boundaries are clearly labeled design only.
 
-schema.sql, seed.sql, migrations, requirement.md, openapi.yaml and112passingtests. Images are AI-generated illustrations with disclosure, not supplied photographs of real dishes.
+## Visual and content truthfulness
+
+Existing food images are AI-created illustrations, not photographs submitted by users. Real recipe names, quantities and ratings come from the API. Generic illustrations are labeled. Screenshots must identify the actual version captured; old screenshots are not final-release evidence.
 
 ## Accessibility and inclusion
 
-Thai labels, native form controls, keyboard focus, announced request status and a single-column mobile layout.
+Thai labels, clear role guidance, native form controls, meaningful focus, announced request states, reduced motion, and responsive layouts. Automated source/VM checks do not substitute for actual browser/keyboard/mobile inspection. See DESIGN.md for tokens and the release checklist for verified versus pending checks.

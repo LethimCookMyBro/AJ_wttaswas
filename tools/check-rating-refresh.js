@@ -207,4 +207,24 @@ async function ownerNavigationRace() {
   assert.match(catalog.get('detail-catalog-status').textContent, /catalog unavailable/);
   console.log('PASS owner delete completion preserves another recipe and catalog failure offers detail retry');
 }
-(async () => { await rating(true); await rating(false); await auth(); await create(); await pagination(); await timeoutBudget(); await ingredientWorkflow(); await detailSemantics(); await ownerNavigationRace(); })().catch((error) => { console.error(error); process.exitCode = 1; });
+async function emptyRecovery() {
+  const h = harness((url) => {
+    const query = new URL(url, 'http://fixture').searchParams;
+    const filtered = query.has('difficulty') || query.has('search') || query.has('categoryId');
+    return ok(filtered ? [] : [recipe], { pagination: { page: 1, limit: 9, total: filtered ? 0 : 1, totalPages: filtered ? 0 : 1 } });
+  });
+  await h.run('loadRecipes()');
+  h.run("state.difficulty = 'hard'; state.search = 'ไม่มี'; state.filter = '1'; state.page = 2;");
+  await h.run('loadRecipes()');
+  assert.equal(h.get('featured-recipe').hidden, false, 'filtering does not erase the real featured recipe');
+  const empty = h.get('recipe-list').children[0];
+  const reset = empty.children.find((item) => item.textContent.includes('ล้างตัวกรอง'));
+  assert.ok(reset, 'empty filtered result has direct recovery');
+  assert.equal(empty.children.some((item) => item.textContent === 'แบ่งปันสูตรอาหาร'), false, 'guest sees no role-forbidden empty CTA');
+  await reset.handlers.click();
+  const query = new URL(h.requests.at(-1).url, 'http://fixture').searchParams;
+  assert.equal(query.has('search'), false); assert.equal(query.has('difficulty'), false); assert.equal(query.has('categoryId'), false);
+  assert.equal(query.get('page'), '1'); assert.equal(h.get('recipe-list').children.length, 1);
+  console.log('PASS empty result clears all filters and preserves real featured context without guest write CTA');
+}
+(async () => { await rating(true); await rating(false); await auth(); await create(); await pagination(); await timeoutBudget(); await ingredientWorkflow(); await detailSemantics(); await ownerNavigationRace(); await emptyRecovery(); })().catch((error) => { console.error(error); process.exitCode = 1; });

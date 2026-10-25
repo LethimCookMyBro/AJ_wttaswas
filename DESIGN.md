@@ -36,6 +36,6 @@ The live reference review covered Apple iPhone comparison (aligned recipe facts)
 
 ## Verification status
 
-Nine frontend behavior scenarios pass, including auth/role/expiry, rating refresh failure, atomic ingredient payload, duplicate/precision validation, double-submit suppression and late-write navigation. Twenty guide tests cover sequence/races and network/schema failures. These are automated behavior tests, not rendered UI evidence.
+Ten frontend behavior scenarios pass, including auth/role/expiry, rating refresh failure, atomic ingredient payload, duplicate/precision validation, double-submit suppression and late-write navigation. Thirty-one guide tests cover sequence/races and network/schema failures. These are automated behavior tests, not rendered UI evidence.
 
-After-change browser screenshots and viewport inspection are pending: headless Chromium could not launch in this execution environment; cloud browser could not reach the local server. Existing screenshots are explicitly before-change evidence. Do not describe the new design as visually verified until the deployment/preview is inspected.
+Release9aaac60 is deployed and its exact assets/health/API were verified. Actual desktop home/detail/create/login screenshots were inspected. Ordinary browser window resizing and zoom exposed a500px navigation/grid issue and an empty-filter recovery gap; both are fixed in the follow-up and require live retesting.390CSS-pixel layout had no observed horizontal overflow; this is desktop responsive testing, not a touch-device claim. The complete viewport/keyboard matrix is still being finalized.

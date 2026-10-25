@@ -12,9 +12,9 @@
 
 ## Executed
 
-`npm run test:ui`: 9 behavior scenarios passed. Uses a VM DOM test double, not a browser.
+`npm run test:ui`: 10 behavior scenarios passed. Uses a VM DOM test double, not a browser.
 
-`npm run coverage`: 185 tests, 12 suites passed. Backend lines94.19%, statements93.32%, branches85.79%, functions98.46%. Includes20 documentation tests. See backend report for lowest-covered files and limitations.
+`npm run coverage`: 196 tests, 12 suites passed. Backend lines94.19%, statements93.32%, branches85.79%, functions98.46%. Includes31 documentation tests. See backend report for lowest-covered files and limitations.
 
 `npm run failure-scenarios`: S1–S8 pass. Live S0 did not establish normal upstream availability in this final run; it returned controlled fallback, so the overall report truthfully says SOME FAILED. Initial run (before absolute deadline fix) preserved separately; its S0 succeeded but S1 failed an overstrict fast-DNS assumption. Final S1 accepts network failure or timeout within the bounded retry budget, because DNS/proxy failures are environment-dependent.
 
@@ -25,3 +25,7 @@
 - Deployed commit identity, read-only health/API/Swagger smoke and rollback readiness.
 
 No production writes, secrets, or user accounts were used by these tests. Browser launch/network restrictions are not recorded as successful visual QA. Current guide screenshots are labeled static walkthrough illustrations, not evidence of the new layout.
+
+## Post-deployment review
+
+First release9aaac60: Railway success status and five exact deployed asset hashes verified; all nine public smoke routes returned200, system reports MySQL. Actual desktop screenshots inspected. Narrow500px header/grid and zero-result recovery issues found by live review were fixed for the follow-up. Guide snapshots now show the actual cream/forest release and have correct JPEG MIME. Walkthrough now verifies a supplied recipe ID against actual ingredients/reviews without performing writes. Final refined-release browser retest remains pending.

@@ -1,0 +1,90 @@
+{
+  "checkedAt": "2026-10-25T04:57:55.810294+00:00",
+  "commit": "9aaac60e651ef7ea0a05d7446afb10637b030670",
+  "tree": "88a8289d00112d02d35592fcc7c2bb2ebfac075b",
+  "assets": [
+    {
+      "route": "/app.js",
+      "status": 200,
+      "sha256": "1a710347adc5c94fc3295dca174f11fb68382f242e374d2b2c24d37b41469f41",
+      "matchesSource": true
+    },
+    {
+      "route": "/styles.css",
+      "status": 200,
+      "sha256": "a903a993d161ed6415c6878566df00a1faaf6f8f178be95c5b72e59d1a626e15",
+      "matchesSource": true
+    },
+    {
+      "route": "/api-guide.js",
+      "status": 200,
+      "sha256": "3e1e764f1dd5a4c5036698984c3fa9cdcf9cf14c6b291a52a69e3a1e26b3ac0e",
+      "matchesSource": true
+    },
+    {
+      "route": "/api-guide.css",
+      "status": 200,
+      "sha256": "a04a1d0c670d8178f124a0c0cf21067ede16bad54c96186270adf6e5edfbe379",
+      "matchesSource": true
+    },
+    {
+      "route": "/openapi.yaml",
+      "status": 200,
+      "sha256": "d1faf09227f946b5422b1c9cde1c5eaaa5ed993ee7a11558056263f05a742f4c",
+      "matchesSource": true
+    }
+  ],
+  "endpoints": [
+    {
+      "route": "/healthz",
+      "status": 200,
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "route": "/api/v1/system",
+      "status": 200,
+      "body": {
+        "message": "สถานะระบบสูตรอาหาร",
+        "data": {
+          "architecture": "modular-monolith",
+          "storage": "mysql",
+          "contexts": [
+            "recipe-catalog",
+            "community-reviews",
+            "meal-discovery"
+          ]
+        }
+      }
+    },
+    {
+      "route": "/api/v1/recipes",
+      "status": 200
+    },
+    {
+      "route": "/api/v1/recipes/1",
+      "status": 200
+    },
+    {
+      "route": "/api/v1/ingredients",
+      "status": 200
+    },
+    {
+      "route": "/api/v1/categories",
+      "status": 200
+    },
+    {
+      "route": "/api-docs/",
+      "status": 200
+    },
+    {
+      "route": "/api-docs/start/",
+      "status": 200
+    },
+    {
+      "route": "/api-docs/reference/",
+      "status": 200
+    }
+  ]
+}

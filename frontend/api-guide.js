@@ -57,6 +57,18 @@
     items.forEach((text) => list.append(element('li', text)));
     return list;
   }
+  function ingredientText(item) {
+    const units = { grams: 'กรัม', gram: 'กรัม', ml: 'มล.', pieces: 'ชิ้น', piece: 'ชิ้น', cloves: 'กลีบ', clove: 'กลีบ' };
+    return `${item.name} · ${item.quantity} ${units[item.unit] || item.unit}`;
+  }
+  function instructionList(instructions) {
+    const list = document.createElement('ol');
+    list.className = 'live-instructions';
+    const parts = String(instructions || '').split(/(?:\r?\n)+|(?:^|\s)(?=\d+[.)]\s)/u)
+      .map((part) => part.replace(/^\s*\d+[.)]\s*/, '').trim()).filter(Boolean);
+    (parts.length ? parts : ['ยังไม่มีวิธีทำ']).forEach((part) => list.append(element('li', part)));
+    return list;
+  }
   function updateAppLinks() {
     const href = state.selected ? `/#recipe/${state.selected}` : '/#recipes';
     ['live-app-link', 'review-app-link', 'ingredients-app-link'].forEach((id) => { $(id).href = href; });
@@ -86,9 +98,9 @@
       state.detailRead = true;
       result.append(element('h4', recipe.name));
       result.append(element('p', `${recipe.category_name || 'ไม่ระบุหมวดหมู่'} · ${recipe.cook_time_minutes} นาที`));
-      result.append(element('p', recipe.instructions || 'ยังไม่มีวิธีทำ'));
+      result.append(element('h4', 'วิธีทำ'), instructionList(recipe.instructions));
       result.append(element('h4', 'วัตถุดิบของสูตรนี้'));
-      result.append(recipe.ingredients.length ? resultList(recipe.ingredients.map((item) => `${item.name} · ${item.quantity} ${item.unit}`)) : element('p', 'สูตรนี้ยังไม่มีวัตถุดิบที่ผูกไว้'));
+      result.append(recipe.ingredients.length ? resultList(recipe.ingredients.map(ingredientText)) : element('p', 'สูตรนี้ยังไม่มีวัตถุดิบที่ผูกไว้'));
       $('live-continue').textContent = 'ต่อไป ดูคลังวัตถุดิบ';
       $('live-next').hidden = false;
     } else {
@@ -149,6 +161,68 @@
     state.detailRead = false;
     updateAppLinks();
     selectStep('detail');
+  });
+  let verifying = false;
+  $('verify-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (verifying) return;
+    const value = $('verify-id').value.trim();
+    const id = Number(value);
+    if (!/^[1-9]\d*$/.test(value) || !Number.isSafeInteger(id)) {
+      $('verify-result').hidden = true;
+      $('verify-app-link').hidden = true;
+      $('verify-status').textContent = 'ใส่รหัสสูตรเป็นจำนวนเต็มบวก เช่น 12';
+      return;
+    }
+    verifying = true;
+    $('verify-run').disabled = true;
+    $('verify-id').disabled = true;
+    $('verify-form').setAttribute('aria-busy', 'true');
+    $('verify-result').hidden = true;
+    $('verify-app-link').hidden = true;
+    $('verify-status').textContent = `กำลังอ่านสูตร #${id} และรีวิวล่าสุด…`;
+    const records = [];
+    $('verify-response').textContent = 'กำลังรอผลตอบกลับ…';
+    async function read(path) {
+      records.push(`GET ${path}`);
+      $('verify-response').textContent = records.join('\n\n');
+      const response = await fetch(path, { method: 'GET', credentials: 'omit', headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(15000) });
+      records.push(`HTTP ${response.status}`);
+      let body;
+      try { body = await response.json(); }
+      catch { records.push('ไม่มีผลตอบกลับ JSON'); throw new Error('เซิร์ฟเวอร์ไม่ได้ส่ง JSON กลับมา'); }
+      records.push(JSON.stringify(body, null, 2));
+      if (!response.ok) throw new Error(body.error?.message || `เซิร์ฟเวอร์ตอบกลับ ${response.status}`);
+      return body.data;
+    }
+    try {
+      const recipe = await read(`/api/v1/recipes/${id}`);
+      if (!recipe?.name || !Array.isArray(recipe.ingredients)) throw new Error('รูปแบบรายละเอียดสูตรไม่ถูกต้อง');
+      const reviews = await read(`/api/v1/recipes/${id}/ratings`);
+      if (!reviews || !Array.isArray(reviews.ratings) || !Number.isFinite(Number(reviews.ratingCount))) throw new Error('รูปแบบข้อมูลรีวิวไม่ถูกต้อง');
+      const result = $('verify-result');
+      result.replaceChildren(element('h3', recipe.name), element('p', `สูตร #${id} · ${recipe.cook_time_minutes} นาที`), element('h4', `วัตถุดิบ ${recipe.ingredients.length} รายการ`));
+      result.append(recipe.ingredients.length ? resultList(recipe.ingredients.map(ingredientText)) : element('p', 'สูตรนี้ยังไม่มีวัตถุดิบที่ผูกไว้'));
+      result.append(element('h4', Number(reviews.ratingCount) ? `คะแนนเฉลี่ย ${reviews.averageScore}/5 · ${reviews.ratingCount} รีวิว` : 'ยังไม่มีรีวิว'));
+      if (reviews.ratings.length) {
+        result.append(element('p', `แสดง ${Math.min(5, reviews.ratings.length)} รีวิวจากผลตอบกลับล่าสุด`));
+        result.append(resultList(reviews.ratings.slice(0, 5).map((review) => `${review.username} · ${review.ratingScore}/5 · ${review.reviewComment || 'ไม่ได้เขียนความคิดเห็น'}`)));
+      }
+      result.hidden = false;
+      $('verify-app-link').href = `/#recipe/${id}`;
+      $('verify-app-link').hidden = false;
+      $('verify-status').textContent = `อ่านสูตรและรีวิวสำเร็จ · ${new Date().toLocaleTimeString('th-TH')} · เปรียบเทียบกับข้อมูลที่คุณบันทึกบนเว็บ`;
+    } catch (error) {
+      const message = ['TimeoutError', 'AbortError'].includes(error.name) ? 'เซิร์ฟเวอร์ใช้เวลานานเกินไป' : error.message || 'เชื่อมต่อไม่ได้';
+      $('verify-status').textContent = `ตรวจผลไม่ครบ: ${message} ตรวจรหัสสูตรแล้วลองอีกครั้ง`;
+      records.push(`อ่านไม่สำเร็จ: ${message}`);
+    } finally {
+      $('verify-response').textContent = records.join('\n\n');
+      verifying = false;
+      $('verify-run').disabled = false;
+      $('verify-id').disabled = false;
+      $('verify-form').setAttribute('aria-busy', 'false');
+    }
   });
   controls();
 })();

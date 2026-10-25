@@ -17,7 +17,7 @@ describe("Visual API overview and separate tutorial", () => {
     expect(response.text).toContain('href="/api-docs/reference/"');
     expect(response.text).not.toMatch(/<pre\b/);
     expect([...response.text.matchAll(/<img\b/g)].length).toBeGreaterThanOrEqual(3);
-    expect(response.text).toContain('/assets/guide-home.png');
+    expect(response.text).toContain('/assets/guide-home.jpg');
     for (const image of response.text.matchAll(/<img\b[^>]*>/g)) {
       expect(image[0]).toMatch(/alt="[^"]+"/);
       expect(image[0]).toMatch(/width="\d+"/);
@@ -75,7 +75,27 @@ describe("Visual API overview and separate tutorial", () => {
     for (const url of destinations) {
       const response = await request(app).get(url);
       expect({ url, status: response.status }).toEqual({ url, status: 200 });
+      if (/\/guide-(home|recipe|login)\.jpg$/.test(url)) {
+        expect(response.headers["content-type"]).toMatch(/image\/jpeg/);
+        expect(response.body[0]).toBe(0xff);
+        expect(response.body[1]).toBe(0xd8);
+      }
     }
+  });
+
+  test("beginner flow uses native keyboard-accessible disclosures and no font arrows", async () => {
+    for (const route of ["/api-docs/", "/api-docs/start/"]) {
+      const html = (await request(app).get(route)).text;
+      expect(html).not.toMatch(/[↗↓←]/);
+      expect(html).toContain('class="guide-arrow"');
+    }
+    const overview = (await request(app).get("/api-docs/")).text;
+    expect(overview).toContain('flow-disclosures');
+    expect(overview).toContain('ไม่ได้ส่งคำขอจริง');
+    const start = (await request(app).get("/api-docs/start/")).text;
+    expect(start).toContain('id="verify-form"');
+    expect(start).toContain('6. ตรวจจาก API อีกครั้ง');
+    expect(start).not.toMatch(/<details[^>]*request-inspector[^>]*\bopen\b/);
   });
 
   test("guide stylesheet is served and uses the site's existing design tokens", async () => {
@@ -208,6 +228,65 @@ describe('Read-only API walkthrough', () => {
     expect(h.get('live-response-code').textContent).toBe('HTTP 429');
     expect(h.get('live-status').textContent).toContain('ส่งคำขอถี่เกินไป');
     expect(h.steps[1].disabled).toBe(true);
+  });
+
+  test('detail renders explicit cooking steps and Thai units while retaining raw JSON', async () => {
+    const recipe = { ...recipes[0], instructions: '1. เตรียมไข่\n2. ทอดให้สุก', ingredients: [{ name: 'ไข่', quantity: 2, unit: 'pieces' }, { name: 'น้ำมัน', quantity: 1, unit: 'ช้อนโต๊ะ' }] };
+    const h = harness((url) => Promise.resolve(ok(url.includes('?') ? recipes : recipe)));
+    await h.click('live-run');
+    h.click('live-continue');
+    await h.click('live-run');
+    const content = h.get('live-result').children;
+    const steps = content.find((item) => item.className === 'live-instructions');
+    expect(steps.children.map((item) => item.textContent)).toEqual(['เตรียมไข่', 'ทอดให้สุก']);
+    const ingredients = content.find((item) => item.className === 'live-items');
+    expect(ingredients.children.map((item) => item.textContent)).toEqual(['ไข่ · 2 ชิ้น', 'น้ำมัน · 1 ช้อนโต๊ะ']);
+    expect(h.get('live-response').textContent).toContain('pieces');
+  });
+
+  test('verification reads real recipe and ratings and never mutates', async () => {
+    const h = harness((url) => Promise.resolve(ok(url.endsWith('/ratings') ? { ratingCount: 1, averageScore: 4, ratings: [{ username: 'fixture', ratingScore: 4, reviewComment: 'ทดสอบ' }] } : { ...recipes[0], ingredients: [{ name: 'ไข่', quantity: 2, unit: 'ฟอง' }] })));
+    h.get('verify-id').value = '7';
+    await h.get('verify-form').handlers.submit({ preventDefault() {} });
+    expect(h.fetch.mock.calls.map(([url]) => url)).toEqual(['/api/v1/recipes/7', '/api/v1/recipes/7/ratings']);
+    expect(h.get('verify-result').hidden).toBe(false);
+    expect(h.get('verify-status').textContent).toContain('อ่านสูตรและรีวิวสำเร็จ');
+    expect(h.get('verify-response').textContent).toContain('HTTP 200');
+    expect(h.get('verify-app-link').href).toBe('/#recipe/7');
+    for (const [, options] of h.fetch.mock.calls) { expect(options.method).toBe('GET'); expect(options.credentials).toBe('omit'); }
+  });
+
+  test.each(['0', '-2', '1.5', '1e2', '9007199254740992', 'x'])('verification rejects invalid recipe ID %s without requesting', async (value) => {
+    const h = harness(() => Promise.resolve(ok({})));
+    h.get('verify-id').value = value;
+    await h.get('verify-form').handlers.submit({ preventDefault() {} });
+    expect(h.fetch).not.toHaveBeenCalled();
+    expect(h.get('verify-status').textContent).toContain('จำนวนเต็มบวก');
+  });
+
+  test('verification hides earlier result if reviews fail and retains the actual request log', async () => {
+    const h = harness((url) => Promise.resolve(url.endsWith('/ratings') ? { ok: false, status: 503, json: async () => ({ error: { message: 'unavailable' } }) } : ok({ ...recipes[0], ingredients: [] })));
+    h.get('verify-id').value = '7';
+    await h.get('verify-form').handlers.submit({ preventDefault() {} });
+    expect(h.get('verify-result').hidden).toBe(true);
+    expect(h.get('verify-app-link').hidden).toBe(true);
+    expect(h.get('verify-status').textContent).toContain('ตรวจผลไม่ครบ');
+    expect(h.get('verify-response').textContent).toContain('HTTP 503');
+    expect(h.get('verify-run').disabled).toBe(false);
+  });
+
+  test('verification blocks duplicate submissions until both reads finish', async () => {
+    let resolve;
+    const h = harness(jest.fn().mockImplementationOnce(() => new Promise((done) => { resolve = done; })).mockResolvedValueOnce(ok({ ratingCount: 0, ratings: [] })));
+    h.get('verify-id').value = '7';
+    const pending = h.get('verify-form').handlers.submit({ preventDefault() {} });
+    await h.get('verify-form').handlers.submit({ preventDefault() {} });
+    expect(h.fetch).toHaveBeenCalledTimes(1);
+    expect(h.get('verify-id').disabled).toBe(true);
+    resolve(ok({ ...recipes[0], ingredients: [] }));
+    await pending;
+    expect(h.fetch).toHaveBeenCalledTimes(2);
+    expect(h.get('verify-id').disabled).toBe(false);
   });
 
   test('changing recipe invalidates earlier detail and catalog access', async () => {
