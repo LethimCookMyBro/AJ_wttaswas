@@ -4,21 +4,20 @@ Updated 25 October 2026. Food discovery comes first; developer documentation is 
 
 ## Design tokens
 
-- Paper `#f8f5ef`, surface `#fffdf9`, ink `#252b25`, muted `#62675d`.
-- Forest hero/action `#243b32`, terracotta accent `#aa3d20`, warm hero button `#f2a273`.
-- Rules `#dddcd2`, soft cooking panel `#e7eddf`.
-- Local Noto Sans Thai 400/600/700, `font-display: swap`. Body 16px; metadata 12–14px; headings scale by viewport. Food imagery has reserved aspect ratios.
-- Mostly 4/8px spacing increments; crisp 5px controls and 8px image corners. Food remains the visual anchor, not decorative dashboard cards.
+- White page `#ffffff`, light botanical hero `#f4f6f0`, ink `#24332d`, muted `#606a64`.
+- Forest primary hero action `#244c3b`, terracotta product action `#a43d22`; quiet rules `#e1e5e0`.
+- Self-hosted IBM Plex Sans Thai 400/500/600, `font-display: swap`; 17px desktop body and 16px narrow body. Headings use 600, recipe titles 500. This replaces the rejected Noto Sans Thai appearance for product surfaces.
+- Controls use 6px corners, food images 8px corners. Forms, reviews and ingredient sections are open layouts divided with spacing and thin rules, not nested cards.
 
 ## Page hierarchy
 
-- Home: editorial hero, API-backed featured recipe, three explicit paths, category/search/difficulty/sort, paged real recipe cards, meal-idea next step.
-- Detail: actual recipe metadata, ingredients with native checkboxes, explicitly numbered/newline cooking steps, ratings. Plain instructions stay one step rather than inventing missing content.
-- Create: recipe basics → ingredient rows → method. One POST writes the recipe and optional ingredients atomically. Failed saves preserve entered data. Successful saves open the returned ID only if the user has not navigated away.
+- Home: compact food-led hero → recipe search/filter/list. Removed the three competing discovery paths and repeated marketing copy. A separate “นำเสนอ” navigation entry leads to the guided presentation, not to ordinary product tasks.
+- Detail: image and actual title/metadata → ingredient checklist and ordered cooking steps → ratings. Decorative invitation and repeated section labels are removed.
+- Create: one continuous form, numbered “1. ข้อมูลสูตร”, “2. วัตถุดิบ”, “3. วิธีทำ”, then save. Preserve atomic save, entered values on failure and navigation-race protections.
 - Owner tools: only the recipe's chef or an admin sees ingredient assignment and typed-name deletion confirmation; server enforces the same authorization independently.
-- Ideas: ingredient examples, loading/empty/error states, real upstream result names with source/degraded labels. Fallbacks never masquerade as upstream results.
-- Login: server-authenticated identity, role explanations, token in memory only. Guest/member restrictions are explained at the point of action.
-- Documentation: overview → GET-only walkthrough → existing Swagger reference. Writes happen through authenticated app forms or Swagger, not a hidden guide script.
+- Ideas: ingredient selection → real upstream names and source/degraded labels. Fallbacks never masquerade as upstream results.
+- Login: a direct “เข้าสู่ระบบ” heading and account form. Keep concise role and 15-minute/refresh session guidance.
+- Documentation: separate presentation-first guided flow with optional API reference. Product pages do not ask ordinary visitors to understand backend terminology.
 
 ## Interaction and accessibility
 

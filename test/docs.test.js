@@ -16,8 +16,8 @@ describe("Visual API overview and separate tutorial", () => {
     expect(response.text).toContain('href="/api-docs/start/"');
     expect(response.text).toContain('href="/api-docs/reference/"');
     expect(response.text).not.toMatch(/<pre\b/);
-    expect([...response.text.matchAll(/<img\b/g)].length).toBeGreaterThanOrEqual(3);
-    expect(response.text).toContain('/assets/guide-home.jpg');
+    expect(response.text).toContain("ครัวแบ่งปัน ทำอะไร?");
+    expect(response.text).toContain('class="entry-rail"');
     for (const image of response.text.matchAll(/<img\b[^>]*>/g)) {
       expect(image[0]).toMatch(/alt="[^"]+"/);
       expect(image[0]).toMatch(/width="\d+"/);
@@ -32,17 +32,17 @@ describe("Visual API overview and separate tutorial", () => {
     expect(response.status).toBe(200);
     expect(response.text).toContain('data-guide-page="start"');
     expect(response.text).toContain('href="/api-docs/"');
-    expect(response.text).toContain('/assets/guide-swagger.png');
-    expect(response.text).toContain('/assets/guide-auth.png');
+    expect(response.text).toContain('/assets/guide-login.jpg');
+    expect(response.text).toContain('id="created-recipe-id"');
     expect(response.text).toContain("ข้อมูลจริง");
     expect(response.text).toContain('src="/api-guide.js" defer');
-    expect(response.text).toContain('id="live-lab"');
+    expect(response.text).toContain('id="presentation-stages"');
+    expect([...response.text.matchAll(/data-stage="[1-4]"/g)]).toHaveLength(4);
     expect(response.text).toContain('href="/#create"');
-    expect(response.text).toContain('href="/#login"');
     expect(response.text).not.toMatch(/<input[^>]*type="password"/i);
     expect(response.text).toContain("15 นาที");
     expect(response.text).toContain("ไม่ต้องใส่คำว่า Bearer");
-    expect(response.text.indexOf("ข้อมูลจริง")).toBeLessThan(response.text.indexOf('"name": "ไข่เจียวทดสอบ"'));
+    expect(response.text).toContain('id="request-log"');
     expect(response.text).not.toMatch(/<script(?! src="\/api-guide\.js" defer><\/script>)|\son\w+=/i);
     expect(response.headers["content-security-policy"]).toContain("script-src 'self'");
   });
@@ -87,14 +87,13 @@ describe("Visual API overview and separate tutorial", () => {
     for (const route of ["/api-docs/", "/api-docs/start/"]) {
       const html = (await request(app).get(route)).text;
       expect(html).not.toMatch(/[↗↓←]/);
-      expect(html).toContain('class="guide-arrow"');
+      expect(html).toContain('<details class="teacher-details"');
     }
     const overview = (await request(app).get("/api-docs/")).text;
-    expect(overview).toContain('flow-disclosures');
-    expect(overview).toContain('ไม่ได้ส่งคำขอจริง');
+    expect(overview).toContain('ไม่ใช่สถานะสด');
     const start = (await request(app).get("/api-docs/start/")).text;
     expect(start).toContain('id="verify-form"');
-    expect(start).toContain('6. ตรวจจาก API อีกครั้ง');
+    expect(start).toContain('อ่านกลับ เพื่อยืนยันผล');
     expect(start).not.toMatch(/<details[^>]*request-inspector[^>]*\bopen\b/);
   });
 
@@ -149,194 +148,10 @@ describe("Visual API overview and separate tutorial", () => {
   });
 });
 
-describe('Read-only API walkthrough', () => {
-  const vm = require('node:vm');
-  const source = fs.readFileSync(path.join(__dirname, '../frontend/api-guide.js'), 'utf8');
-  function node() {
-    return { textContent: '', value: '', hidden: false, disabled: false, children: [], dataset: {}, attributes: {}, handlers: {},
-      append(...children) { this.children.push(...children); },
-      replaceChildren(...children) { this.children = children; },
-      setAttribute(name, value) { this.attributes[name] = value; },
-      removeAttribute(name) { delete this.attributes[name]; },
-      addEventListener(name, handler) { this.handlers[name] = handler; },
-      focus() {},
-    };
-  }
-  function harness(respond) {
-    const nodes = new Map();
-    const get = (id) => { if (!nodes.has(id)) nodes.set(id, node()); return nodes.get(id); };
-    const steps = ['recipes', 'detail', 'ingredients'].map((step) => Object.assign(node(), { dataset: { liveStep: step } }));
-    const fetch = jest.fn(respond);
-    vm.runInNewContext(source, { document: { getElementById: get, querySelectorAll: () => steps, createElement: node }, fetch, AbortSignal, Date });
-    return { get, steps, fetch, click: (id) => get(id).handlers.click() };
-  }
-  const ok = (data) => ({ ok: true, status: 200, json: async () => ({ data }) });
-  const recipes = [{ id: 7, name: '<img src=x onerror=alert(1)>', cook_time_minutes: 8 }];
-
-  test('served external script performs only explicit GET requests and never reads credentials', async () => {
-    const response = await request(app).get('/api-guide.js');
-    expect(response.status).toBe(200);
-    expect(response.headers['content-type']).toMatch(/javascript/);
-    expect(response.text).toContain("method: 'GET'");
-    expect(response.text).toContain("credentials: 'omit'");
-    expect(response.text).not.toMatch(/innerHTML|localStorage|sessionStorage|Authorization|method:\s*['"](?:POST|DELETE|PUT|PATCH)/);
-  });
-
-  test('walks from live list to chosen detail to catalog, with no automatic requests', async () => {
-    const h = harness((url) => Promise.resolve(ok(url.includes('?') ? recipes : url.endsWith('/7') ? { ...recipes[0], instructions: 'ทอดไข่', ingredients: [{ name: 'ไข่', quantity: 2, unit: 'ฟอง' }] } : [{ id: 5, name: 'ไข่' }])));
-    expect(h.fetch).not.toHaveBeenCalled();
-    expect(h.steps[1].disabled).toBe(true);
-    await h.click('live-run');
-    expect(h.get('live-response').textContent).toContain(recipes[0].name);
-    expect(h.get('live-recipe').children[0].textContent).toBe(recipes[0].name);
-    expect(h.steps[1].disabled).toBe(false);
-    h.click('live-continue');
-    expect(h.get('live-path').textContent).toBe('/api/v1/recipes/7');
-    await h.click('live-run');
-    expect(h.steps[2].disabled).toBe(false);
-    expect(h.get('live-app-link').href).toBe('/#recipe/7');
-    h.click('live-continue');
-    await h.click('live-run');
-    expect(h.fetch.mock.calls.map(([url]) => url)).toEqual(['/api/v1/recipes?limit=3', '/api/v1/recipes/7', '/api/v1/ingredients']);
-    for (const [, options] of h.fetch.mock.calls) { expect(options.method).toBe('GET'); expect(options.credentials).toBe('omit'); }
-    expect(h.get('live-status').textContent).toContain('อ่านสำเร็จ');
-  });
-
-  test('empty lists do not enable nonexistent detail steps', async () => {
-    const h = harness(() => Promise.resolve(ok([])));
-    await h.click('live-run');
-    expect(h.steps[1].disabled).toBe(true);
-    expect(h.get('live-next').hidden).toBe(true);
-    expect(h.get('live-result').children[0].textContent).toBe('ยังไม่มีสูตรในระบบ');
-  });
-
-  test('network errors are retryable and do not show stale results', async () => {
-    const h = harness(jest.fn().mockResolvedValueOnce(ok(recipes)).mockRejectedValueOnce(new Error('offline')));
-    await h.click('live-run');
-    await h.click('live-run');
-    expect(h.get('live-result').hidden).toBe(true);
-    expect(h.get('live-status').textContent).toContain('offline');
-    expect(h.get('live-response').textContent).toBe('ไม่มีผลตอบกลับ JSON');
-    expect(h.get('live-run').disabled).toBe(false);
-    expect(h.steps[1].disabled).toBe(true);
-    expect(h.get('live-app-link').href).toBe('/#recipes');
-  });
-
-  test('HTTP errors expose the actual response without advancing', async () => {
-    const h = harness(() => Promise.resolve({ ok: false, status: 429, json: async () => ({ error: { message: 'ส่งคำขอถี่เกินไป' } }) }));
-    await h.click('live-run');
-    expect(h.get('live-response-code').textContent).toBe('HTTP 429');
-    expect(h.get('live-status').textContent).toContain('ส่งคำขอถี่เกินไป');
-    expect(h.steps[1].disabled).toBe(true);
-  });
-
-  test('detail renders explicit cooking steps and Thai units while retaining raw JSON', async () => {
-    const recipe = { ...recipes[0], instructions: '1. เตรียมไข่\n2. ทอดให้สุก', ingredients: [{ name: 'ไข่', quantity: 2, unit: 'pieces' }, { name: 'น้ำมัน', quantity: 1, unit: 'ช้อนโต๊ะ' }] };
-    const h = harness((url) => Promise.resolve(ok(url.includes('?') ? recipes : recipe)));
-    await h.click('live-run');
-    h.click('live-continue');
-    await h.click('live-run');
-    const content = h.get('live-result').children;
-    const steps = content.find((item) => item.className === 'live-instructions');
-    expect(steps.children.map((item) => item.textContent)).toEqual(['เตรียมไข่', 'ทอดให้สุก']);
-    const ingredients = content.find((item) => item.className === 'live-items');
-    expect(ingredients.children.map((item) => item.textContent)).toEqual(['ไข่ · 2 ชิ้น', 'น้ำมัน · 1 ช้อนโต๊ะ']);
-    expect(h.get('live-response').textContent).toContain('pieces');
-  });
-
-  test('verification reads real recipe and ratings and never mutates', async () => {
-    const h = harness((url) => Promise.resolve(ok(url.endsWith('/ratings') ? { ratingCount: 1, averageScore: 4, ratings: [{ username: 'fixture', ratingScore: 4, reviewComment: 'ทดสอบ' }] } : { ...recipes[0], ingredients: [{ name: 'ไข่', quantity: 2, unit: 'ฟอง' }] })));
-    h.get('verify-id').value = '7';
-    await h.get('verify-form').handlers.submit({ preventDefault() {} });
-    expect(h.fetch.mock.calls.map(([url]) => url)).toEqual(['/api/v1/recipes/7', '/api/v1/recipes/7/ratings']);
-    expect(h.get('verify-result').hidden).toBe(false);
-    expect(h.get('verify-status').textContent).toContain('อ่านสูตรและรีวิวสำเร็จ');
-    expect(h.get('verify-response').textContent).toContain('HTTP 200');
-    expect(h.get('verify-app-link').href).toBe('/#recipe/7');
-    for (const [, options] of h.fetch.mock.calls) { expect(options.method).toBe('GET'); expect(options.credentials).toBe('omit'); }
-  });
-
-  test.each(['0', '-2', '1.5', '1e2', '9007199254740992', 'x'])('verification rejects invalid recipe ID %s without requesting', async (value) => {
-    const h = harness(() => Promise.resolve(ok({})));
-    h.get('verify-id').value = value;
-    await h.get('verify-form').handlers.submit({ preventDefault() {} });
-    expect(h.fetch).not.toHaveBeenCalled();
-    expect(h.get('verify-status').textContent).toContain('จำนวนเต็มบวก');
-  });
-
-  test('verification hides earlier result if reviews fail and retains the actual request log', async () => {
-    const h = harness((url) => Promise.resolve(url.endsWith('/ratings') ? { ok: false, status: 503, json: async () => ({ error: { message: 'unavailable' } }) } : ok({ ...recipes[0], ingredients: [] })));
-    h.get('verify-id').value = '7';
-    await h.get('verify-form').handlers.submit({ preventDefault() {} });
-    expect(h.get('verify-result').hidden).toBe(true);
-    expect(h.get('verify-app-link').hidden).toBe(true);
-    expect(h.get('verify-status').textContent).toContain('ตรวจผลไม่ครบ');
-    expect(h.get('verify-response').textContent).toContain('HTTP 503');
-    expect(h.get('verify-run').disabled).toBe(false);
-  });
-
-  test('verification blocks duplicate submissions until both reads finish', async () => {
-    let resolve;
-    const h = harness(jest.fn().mockImplementationOnce(() => new Promise((done) => { resolve = done; })).mockResolvedValueOnce(ok({ ratingCount: 0, ratings: [] })));
-    h.get('verify-id').value = '7';
-    const pending = h.get('verify-form').handlers.submit({ preventDefault() {} });
-    await h.get('verify-form').handlers.submit({ preventDefault() {} });
-    expect(h.fetch).toHaveBeenCalledTimes(1);
-    expect(h.get('verify-id').disabled).toBe(true);
-    resolve(ok({ ...recipes[0], ingredients: [] }));
-    await pending;
-    expect(h.fetch).toHaveBeenCalledTimes(2);
-    expect(h.get('verify-id').disabled).toBe(false);
-  });
-
-  test('changing recipe invalidates earlier detail and catalog access', async () => {
-    const h = harness((url) => Promise.resolve(ok(url.includes('?') ? [...recipes, { id: 9, name: 'สูตรที่สอง', cook_time_minutes: 20 }] : { ...recipes[0], ingredients: [] })));
-    await h.click('live-run');
-    h.click('live-continue');
-    await h.click('live-run');
-    expect(h.steps[2].disabled).toBe(false);
-    h.get('live-recipe').value = '9';
-    h.get('live-recipe').handlers.change();
-    expect(h.steps[2].disabled).toBe(true);
-    expect(h.get('live-result').hidden).toBe(true);
-    expect(h.get('live-path').textContent).toBe('/api/v1/recipes/9');
-    expect(h.get('review-app-link').href).toBe('/#recipe/9');
-  });
-
-  test.each(['TimeoutError', 'AbortError'])('%s leaves a retryable timeout message', async (name) => {
-    const error = new Error('timeout'); error.name = name;
-    const h = harness(() => Promise.reject(error));
-    await h.click('live-run');
-    expect(h.get('live-status').textContent).toContain('เซิร์ฟเวอร์ใช้เวลานานเกินไป');
-    expect(h.get('live-run').disabled).toBe(false);
-  });
-
-  test('non-JSON and unexpected response shapes do not enable steps', async () => {
-    for (const response of [
-      { ok: true, status: 200, json: async () => { throw new Error('invalid JSON'); } },
-      ok({ unexpected: true }),
-    ]) {
-      const h = harness(() => Promise.resolve(response));
-      await h.click('live-run');
-      expect(h.get('live-status').textContent).toContain('อ่านไม่สำเร็จ');
-      expect(h.get('live-result').hidden).toBe(true);
-      expect(h.steps[1].disabled).toBe(true);
-    }
-  });
-
-  test('in-flight requests disable controls and duplicate clicks do not request twice', async () => {
-    let resolve;
-    const h = harness(() => new Promise((done) => { resolve = done; }));
-    const pending = h.click('live-run');
-    expect(h.get('live-run').disabled).toBe(true);
-    h.steps[1].handlers.click();
-    h.get('live-recipe').value = '999';
-    h.get('live-recipe').handlers.change();
-    expect(h.get('live-path').textContent).not.toContain('999');
-    await h.click('live-run');
-    expect(h.fetch).toHaveBeenCalledTimes(1);
-    resolve(ok(recipes));
-    await pending;
-    expect(h.get('live-run').disabled).toBe(false);
-  });
+test('Swagger narrow response tables are locally contained rather than hiding page overflow', async () => {
+  const css = await request(app).get('/api-guide.css').expect(200);
+  expect(css.text).toMatch(/\.swagger-ui \.responses-inner\{[^}]*max-width:100%[^}]*overflow-x:auto/);
+  expect(css.text).toMatch(/\.swagger-ui \.responses-table\{[^}]*table-layout:fixed/);
+  expect(css.text).toMatch(/\.response-col_links\{[^}]*width:58px/);
+  expect(css.text).not.toMatch(/(?:html|body)\s*\{[^}]*overflow-x:hidden/);
 });

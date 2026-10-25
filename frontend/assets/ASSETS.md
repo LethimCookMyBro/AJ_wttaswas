@@ -8,4 +8,6 @@
 
 Noto Sans Thai ดาวน์โหลดจาก Google Fonts. ต้นทางแต่ละน้ำหนักอยู่ใน `font-sources.json`. ฟอนต์ใช้ SIL Open Font License ซึ่งแนบใน `Noto-Sans-Thai-LICENSE.txt`. หน้าเว็บโหลดฟอนต์จาก origin ของตัวเอง ไม่ส่ง request ไป Google Fonts ขณะใช้งาน.
 
-ภาพ JPG ของหน้าแรก รายละเอียด และเข้าสู่ระบบ อัปเดตจาก release `9aaac60` เมื่อ25 ตุลาคม2569 โดยคง bytes ของภาพจับหน้าจอจริง ไม่ได้สร้างภาพ UI จำลอง. ภาพ Swagger สองภาพเป็นตัวอย่างคงที่ของหน้าทดลอง API ไม่ใช่ response สด.
+ภาพ JPG ของหน้าแรก รายละเอียด และเข้าสู่ระบบ อัปเดตจาก release `e89f2c5` เมื่อ25 ตุลาคม2569 โดยคง bytes ของภาพจับหน้าจอจริง ไม่ได้สร้างภาพ UI จำลอง. ภาพ Swagger สองภาพเป็นตัวอย่างคงที่ของหน้าทดลอง API ไม่ใช่ response สด.
+
+IBM Plex Sans Thai (Regular 400, Medium 500, SemiBold 600) ใช้แทนฟอนต์เดิมในหน้าผลิตภัณฑ์และคู่มือที่ปรับใหม่ วันที่ 25 ตุลาคม 2569. ดาวน์โหลดจาก Google Fonts repository: https://github.com/google/fonts/tree/main/ofl/ibmplexsansthai . ลิขสิทธิ์ IBM Corp.; SIL Open Font License อยู่ใน `IBM-Plex-Sans-Thai-LICENSE.txt`. ใช้ไฟล์ `ibm-plex-sans-thai-{400,500,600}.ttf` จาก origin ของเว็บ ไม่มีการเรียก Google Fonts ขณะเปิดหน้า.
