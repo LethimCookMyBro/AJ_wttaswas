@@ -10,7 +10,7 @@ INSERT INTO categories (id, name, description) VALUES
 INSERT INTO users (id, username, email, role) VALUES
   (1, 'chef_somchai', 'somchai.chef@example.com', 'chef'),
   (2, 'foodie_somying', 'somying.eat@example.com', 'member'),
-  (3, 'admin_wittawas', 'admin@example.com', 'admin');
+  (3, 'admin_web', 'admin@example.com', 'admin');
 
 -- 3. Seed Ingredients
 INSERT INTO ingredients (id, name, unit_type) VALUES

@@ -35,7 +35,7 @@ const app = require("../src/index");
     const before = await snapshot();
     chef = (await call("POST","/api/v1/auth/login",{username:"chef_somchai",password:process.env.DEMO_PASSWORD},null,200)).data.token;
     const member = (await call("POST","/api/v1/auth/login",{username:"foodie_somying",password:process.env.DEMO_PASSWORD},null,200)).data.token;
-    admin = (await call("POST","/api/v1/auth/login",{username:"admin_wittawas",password:process.env.DEMO_PASSWORD},null,200)).data.token;
+    admin = (await call("POST","/api/v1/auth/login",{username:"admin_web",password:process.env.DEMO_PASSWORD},null,200)).data.token;
     const adminRecipe = await call("POST", "/api/v1/recipes", {name:"Admin ownership fixture",categoryId:1,instructions:"temporary"}, admin, 201);
     adminRecipeId = adminRecipe.data.id;
     await call("DELETE", `/api/v1/recipes/${adminRecipeId}`, null, chef, 403);

@@ -18,9 +18,15 @@ function createMockPool() {
   const users = [
     { id: 1, username: "chef_somchai", email: "somchai.chef@example.com", role: "chef" },
     { id: 2, username: "foodie_somying", email: "somying.eat@example.com", role: "member" },
-    { id: 3, username: "admin_wittawas", email: "admin@example.com", role: "admin" },
+    { id: 3, username: "admin_web", email: "admin@example.com", role: "admin" },
   ];
-  const passwordsReady = process.env.DEMO_PASSWORD ? Promise.all(users.map(async (user) => { user.password_hash = await hashPassword(process.env.DEMO_PASSWORD); })) : Promise.resolve();
+  const passwordsReady = process.env.DEMO_PASSWORD
+    ? Promise.all(
+        users.map(async (user) => {
+          user.password_hash = await hashPassword(process.env.DEMO_PASSWORD);
+        })
+      )
+    : Promise.resolve();
   const ingredients = [
     { id: 1, name: "หมูสับ", unit_type: "grams" },
     { id: 2, name: "ใบกะเพรา", unit_type: "grams" },
@@ -61,26 +67,52 @@ function createMockPool() {
   const filteredRecipes = (sql, params) => {
     let i = 0;
     let rows = [...recipes];
-    if (sql.includes("r.category_id = ?")) { const id = params[i++]; rows = rows.filter((r) => r.category_id === id); }
-    if (sql.includes("r.difficulty = ?")) { const difficulty = params[i++]; rows = rows.filter((r) => r.difficulty === difficulty); }
+    if (sql.includes("r.category_id = ?")) {
+      const id = params[i++];
+      rows = rows.filter((r) => r.category_id === id);
+    }
+    if (sql.includes("r.difficulty = ?")) {
+      const difficulty = params[i++];
+      rows = rows.filter((r) => r.difficulty === difficulty);
+    }
     if (sql.includes("r.name like ?")) {
       const search = params[i++].slice(1, -1).replace(/!([!%_])/g, "$1");
       rows = rows.filter((r) => r.name.toLocaleLowerCase("th").includes(search.toLocaleLowerCase("th")));
     }
     return { rows, i };
   };
+
   const projectRecipe = (r, sql) => {
     const fields = ["id", "name", "cook_time_minutes", "difficulty", "category_id"];
     if (sql.includes("r.instructions")) fields.push("instructions");
     if (sql.includes("r.author_id")) fields.push("author_id");
-    return { ...Object.fromEntries(fields.map((key) => [key, r[key]])), category_name: categoryName(r.category_id) };
+    return {
+      ...Object.fromEntries(fields.map((key) => [key, r[key]])),
+      category_name: categoryName(r.category_id),
+    };
   };
+
   const handlers = [
-    { match: (sql) => sql === "select 1", run: () => [[{ 1: 1 }]] },
-    { match: (sql) => sql.includes("from users where username = ?"), run: ([username]) => [users.filter((u) => u.username === username)] },
-    { match: (sql) => sql.includes("from users where id = ?"), run: ([id]) => [users.filter((u) => u.id === id)] },
-    { match: (sql) => sql.startsWith("select id, author_id from recipes"), run: ([id]) => [recipes.filter((r) => r.id === id).map((r) => ({ id: r.id, author_id: r.author_id }))] },
-    { match: (sql) => sql.startsWith("select count(*) as total from recipes r"), run: (params, sql) => [[{ total: filteredRecipes(sql, params).rows.length }]] },
+    {
+      match: (sql) => sql === "select 1",
+      run: () => [[{ 1: 1 }]],
+    },
+    {
+      match: (sql) => sql.includes("from users where username = ?"),
+      run: ([username]) => [users.filter((u) => u.username === username)],
+    },
+    {
+      match: (sql) => sql.includes("from users where id = ?"),
+      run: ([id]) => [users.filter((u) => u.id === id)],
+    },
+    {
+      match: (sql) => sql.startsWith("select id, author_id from recipes"),
+      run: ([id]) => [recipes.filter((r) => r.id === id).map((r) => ({ id: r.id, author_id: r.author_id }))],
+    },
+    {
+      match: (sql) => sql.startsWith("select count(*) as total from recipes r"),
+      run: (params, sql) => [[{ total: filteredRecipes(sql, params).rows.length }]],
+    },
     {
       match: (sql) => sql.includes("from recipes r") && sql.includes("join categories") && sql.includes("where r.id = ?"),
       run: ([id], sql) => {
@@ -204,25 +236,43 @@ function createMockPool() {
   };
   const pooledQuery = async (...args) => {
     const unlock = await lock();
-    try { return await query(...args); } finally { unlock(); }
+    try {
+      return await query(...args);
+    } finally {
+      unlock();
+    }
   };
   const getConnection = async () => {
-    let unlock, snapshot;
-    const finish = () => { snapshot = null; if (unlock) { unlock(); unlock = null; } };
+    let unlock;
+    let snapshot;
+    const finish = () => {
+      snapshot = null;
+      if (unlock) {
+        unlock();
+        unlock = null;
+      }
+    };
     const rollback = async () => {
       if (snapshot) ({ recipes, recipeIngredients, ratings } = snapshot);
       finish();
     };
     return {
-      query: (...args) => unlock ? query(...args) : pooledQuery(...args),
+      query: (...args) => (unlock ? query(...args) : pooledQuery(...args)),
       beginTransaction: async () => {
         if (unlock) throw new Error("Transaction already started");
         unlock = await lock();
         snapshot = structuredClone({ recipes, recipeIngredients, ratings });
       },
-      commit: async () => { finish(); },
+      commit: async () => {
+        finish();
+      },
       rollback,
-      release: () => { if (snapshot) { ({ recipes, recipeIngredients, ratings } = snapshot); } finish(); },
+      release: () => {
+        if (snapshot) {
+          ({ recipes, recipeIngredients, ratings } = snapshot);
+        }
+        finish();
+      },
     };
   };
   return { query: pooledQuery, end: async () => {}, getConnection };

@@ -33,11 +33,28 @@ if (process.env.NODE_ENV !== "test") {
   app.use(morgan("dev"));
 }
 app.use(express.json({ limit: "64kb" }));
-app.use("/api/v1", rateLimit({ windowMs: 60000, limit: 200, standardHeaders: "draft-8", legacyHeaders: false, message: { error: { code: "RATE_LIMITED", message: "Too many requests" } } }));
+app.use(
+  "/api/v1",
+  rateLimit({
+    windowMs: 60000,
+    limit: 200,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    message: { error: { code: "RATE_LIMITED", message: "Too many requests" } },
+  })
+);
 app.use(express.static(path.join(__dirname, "..", "frontend")));
 app.disable("x-powered-by");
 
-app.get("/healthz", rateLimit({ windowMs: 60000, limit: 60, standardHeaders: "draft-8", legacyHeaders: false, message: { error: { code: "RATE_LIMITED", message: "Too many health checks" } } }), async (req, res) => {
+const healthLimiter = rateLimit({
+  windowMs: 60000,
+  limit: 60,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: { code: "RATE_LIMITED", message: "Too many health checks" } },
+});
+
+app.get("/healthz", healthLimiter, async (req, res) => {
   res.set("Cache-Control", "no-store");
   try {
     await pool.query("SELECT 1");
@@ -66,8 +83,21 @@ const openapiPath = path.join(__dirname, "..", "openapi.yaml");
 const openapiText = fs.readFileSync(openapiPath, "utf8");
 app.get("/openapi.yaml", (req, res) => res.type("text/yaml").send(openapiText));
 const openapiSpec = YAML.parse(openapiText);
-const swaggerOptions = { customSiteTitle: "ครัวแบ่งปัน | ทดลอง API", customCssUrl: "/api-guide.css", swaggerOptions: { docExpansion: "list", defaultModelsExpandDepth: -1, persistAuthorization: false, deepLinking: true } };
-app.use("/api-docs/reference", swaggerUi.serveFiles(openapiSpec, swaggerOptions), swaggerUi.setup(openapiSpec, swaggerOptions));
+const swaggerOptions = {
+  customSiteTitle: "ครัวแบ่งปัน | ทดลอง API",
+  customCssUrl: "/api-guide.css",
+  swaggerOptions: {
+    docExpansion: "list",
+    defaultModelsExpandDepth: -1,
+    persistAuthorization: false,
+    deepLinking: true,
+  },
+};
+app.use(
+  "/api-docs/reference",
+  swaggerUi.serveFiles(openapiSpec, swaggerOptions),
+  swaggerUi.setup(openapiSpec, swaggerOptions)
+);
 app.get("/api-docs/start", (req, res) => res.redirect(302, "/api-docs/"));
 app.get("/api-start.html", (req, res) => res.redirect(302, "/api-docs/"));
 app.get("/api-docs", (req, res) => res.sendFile(path.join(__dirname, "..", "frontend", "api-guide.html")));
@@ -79,55 +109,119 @@ const errorBody = (code, message) => ({ error: { code, message } });
 const parseId = (value) => (/^[1-9]\d{0,9}$/.test(String(value)) ? Number(value) : null);
 const isPositiveInt = (value) => Number.isInteger(value) && value > 0;
 const isText = (value, max) => typeof value === "string" && value.trim().length > 0 && value.length <= max;
-const isIngredient = (value) => value && typeof value === "object" && !Array.isArray(value) &&
-  isPositiveInt(value.ingredientId) && typeof value.quantity === "number" &&
-  value.quantity >= 0.01 && value.quantity <= 999999.99 &&
-  Number(value.quantity.toFixed(2)) === value.quantity && isText(value.unit, 50);
+const isIngredient = (value) =>
+  Boolean(value) &&
+  typeof value === "object" &&
+  !Array.isArray(value) &&
+  isPositiveInt(value.ingredientId) &&
+  typeof value.quantity === "number" &&
+  value.quantity >= 0.01 &&
+  value.quantity <= 999999.99 &&
+  Number(value.quantity.toFixed(2)) === value.quantity &&
+  isText(value.unit, 50);
 const DIFFICULTIES = ["easy", "medium", "hard"];
 
-const loginLimiter = rateLimit({ windowMs: 60000, limit: 10, standardHeaders: "draft-8", legacyHeaders: false, message: errorBody("RATE_LIMITED", "Too many login attempts") });
-app.post("/api/v1/auth/login", loginLimiter, async (req, res, next) => {
-  const { username, password } = req.body || {};
-  if (!isText(username, 50) || !isText(password, 256)) return res.status(400).json(errorBody("VALIDATION_ERROR", "username and password are required"));
-  try {
-    const [rows] = await pool.query("SELECT id, username, role, password_hash FROM users WHERE username = ?", [username]);
-    const user = rows[0];
-    if (!user || !(await verifyPassword(password, user.password_hash))) return res.status(401).json(errorBody("INVALID_CREDENTIALS", "Invalid username or password"));
-    const token = jwt.sign({}, JWT_SECRET, { algorithm: "HS256", subject: String(user.id), issuer: "recipe-api", audience: "recipe-web", expiresIn: "15m" });
-    res.set("Cache-Control", "no-store").json({ message: "เข้าสู่ระบบสำเร็จ", data: { token, user: { id: user.id, username: user.username, role: user.role } } });
-  } catch (err) { next(err); }
+// POST /api/v1/auth/login - เข้าสู่ระบบและออก JWT Token อายุ 15 นาที
+const loginLimiter = rateLimit({
+  windowMs: 60000,
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: errorBody("RATE_LIMITED", "Too many login attempts"),
 });
 
+app.post("/api/v1/auth/login", loginLimiter, async (req, res, next) => {
+  const { username, password } = req.body || {};
+  if (!isText(username, 50) || !isText(password, 256)) {
+    return res.status(400).json(errorBody("VALIDATION_ERROR", "username and password are required"));
+  }
+  try {
+    const [rows] = await pool.query(
+      "SELECT id, username, role, password_hash FROM users WHERE username = ?",
+      [username]
+    );
+    const user = rows[0];
+    if (!user || !(await verifyPassword(password, user.password_hash))) {
+      return res.status(401).json(errorBody("INVALID_CREDENTIALS", "Invalid username or password"));
+    }
+    const token = jwt.sign({}, JWT_SECRET, {
+      algorithm: "HS256",
+      subject: String(user.id),
+      issuer: "recipe-api",
+      audience: "recipe-web",
+      expiresIn: "15m",
+    });
+    res.set("Cache-Control", "no-store").json({
+      message: "เข้าสู่ระบบสำเร็จ",
+      data: {
+        token,
+        user: { id: user.id, username: user.username, role: user.role },
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Middleware ตรวจสอบ JWT Bearer Token และดึงข้อมูลผู้ใช้จากฐานข้อมูล
 async function authenticate(req, res, next) {
   const match = /^Bearer ([^ ]+)$/.exec(req.get("Authorization") || "");
-  if (!match) return res.status(401).json(errorBody("UNAUTHORIZED", "Bearer token required"));
+  if (!match) {
+    return res.status(401).json(errorBody("UNAUTHORIZED", "Bearer token required"));
+  }
   let claims;
-  try { claims = jwt.verify(match[1], JWT_SECRET, { algorithms: ["HS256"], issuer: "recipe-api", audience: "recipe-web" }); }
-  catch { return res.status(401).json(errorBody("INVALID_TOKEN", "Invalid or expired token")); }
-  if (typeof claims.sub !== "string" || parseId(claims.sub) === null) return res.status(401).json(errorBody("INVALID_TOKEN", "Invalid subject"));
+  try {
+    claims = jwt.verify(match[1], JWT_SECRET, {
+      algorithms: ["HS256"],
+      issuer: "recipe-api",
+      audience: "recipe-web",
+    });
+  } catch {
+    return res.status(401).json(errorBody("INVALID_TOKEN", "Invalid or expired token"));
+  }
+  if (typeof claims.sub !== "string" || parseId(claims.sub) === null) {
+    return res.status(401).json(errorBody("INVALID_TOKEN", "Invalid subject"));
+  }
   try {
     const [rows] = await pool.query("SELECT id, username, role FROM users WHERE id = ?", [Number(claims.sub)]);
-    if (!rows[0]) return res.status(401).json(errorBody("INVALID_TOKEN", "User no longer exists"));
+    if (!rows[0]) {
+      return res.status(401).json(errorBody("INVALID_TOKEN", "User no longer exists"));
+    }
     req.user = rows[0];
     next();
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 }
 
+// Middleware ตรวจสอบสิทธิ์ว่าต้องเป็น chef หรือ admin เท่านั้น
 function recipeWriter(req, res, next) {
-  if (!["chef", "admin"].includes(req.user.role)) return res.status(403).json(errorBody("FORBIDDEN", "Chef or admin required"));
+  if (!["chef", "admin"].includes(req.user.role)) {
+    return res.status(403).json(errorBody("FORBIDDEN", "Chef or admin required"));
+  }
   next();
 }
 
+// Middleware ตรวจสอบว่าเป็นเจ้าของสูตรอาหารนั้นจริง หรือเป็น admin
 async function ownsRecipe(req, res, next) {
   const id = parseId(req.params.id);
-  if (id === null) return res.status(400).json(errorBody("INVALID_ID", "id ต้องเป็นจำนวนเต็มบวก"));
+  if (id === null) {
+    return res.status(400).json(errorBody("INVALID_ID", "id ต้องเป็นจำนวนเต็มบวก"));
+  }
   try {
     const [rows] = await pool.query("SELECT id, author_id FROM recipes WHERE id = ?", [id]);
-    if (!rows[0]) return res.status(404).json(errorBody("RECIPE_NOT_FOUND", "ไม่พบข้อมูลสูตรอาหาร"));
-    if (req.user.role !== "admin" && rows[0].author_id !== req.user.id) return res.status(403).json(errorBody("FORBIDDEN", "Recipe owner or admin required"));
+    if (!rows[0]) {
+      return res.status(404).json(errorBody("RECIPE_NOT_FOUND", "ไม่พบข้อมูลสูตรอาหาร"));
+    }
+    if (req.user.role !== "admin" && rows[0].author_id !== req.user.id) {
+      return res.status(403).json(errorBody("FORBIDDEN", "Recipe owner or admin required"));
+    }
     next();
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 }
+
 const categoryCache = { rows: null, expires: 0 };
 
 // -------------------------------------------------------------
@@ -139,29 +233,67 @@ app.get("/api/v1/recipes", async (req, res, next) => {
   try {
     const allowed = ["page", "limit", "categoryId", "difficulty", "sort", "search"];
     const { page = "1", limit = "10", categoryId, difficulty, sort = "id_asc", search } = req.query;
-    const sorts = { id_asc: "r.id ASC", id_desc: "r.id DESC", name_asc: "r.name ASC", cook_time_asc: "r.cook_time_minutes ASC" };
-    if (Object.keys(req.query).some((key) => !allowed.includes(key)) ||
-        !/^[1-9]\d{0,4}$/.test(String(page)) || !/^[1-9]\d?$|^100$/.test(String(limit)) ||
-        (categoryId !== undefined && (typeof categoryId !== "string" || parseId(categoryId) === null)) ||
-        (difficulty !== undefined && !DIFFICULTIES.includes(difficulty)) || typeof sort !== "string" || !Object.hasOwn(sorts, sort) ||
-        typeof page !== "string" || typeof limit !== "string" ||
-        (search !== undefined && (typeof search !== "string" || search.trim().length > 150))) {
+    const sorts = {
+      id_asc: "r.id ASC",
+      id_desc: "r.id DESC",
+      name_asc: "r.name ASC",
+      cook_time_asc: "r.cook_time_minutes ASC",
+    };
+
+    const invalidQuery =
+      Object.keys(req.query).some((key) => !allowed.includes(key)) ||
+      !/^[1-9]\d{0,4}$/.test(String(page)) ||
+      !/^[1-9]\d?$|^100$/.test(String(limit)) ||
+      (categoryId !== undefined && (typeof categoryId !== "string" || parseId(categoryId) === null)) ||
+      (difficulty !== undefined && !DIFFICULTIES.includes(difficulty)) ||
+      typeof sort !== "string" ||
+      !Object.hasOwn(sorts, sort) ||
+      typeof page !== "string" ||
+      typeof limit !== "string" ||
+      (search !== undefined && (typeof search !== "string" || search.trim().length > 150));
+
+    if (invalidQuery) {
       return res.status(400).json(errorBody("VALIDATION_ERROR", "Invalid pagination, filter, or sort"));
     }
-    const where = [], params = [];
-    if (categoryId !== undefined) { where.push("r.category_id = ?"); params.push(Number(categoryId)); }
-    if (difficulty !== undefined) { where.push("r.difficulty = ?"); params.push(difficulty); }
+
+    const where = [];
+    const params = [];
+    if (categoryId !== undefined) {
+      where.push("r.category_id = ?");
+      params.push(Number(categoryId));
+    }
+    if (difficulty !== undefined) {
+      where.push("r.difficulty = ?");
+      params.push(difficulty);
+    }
     if (search !== undefined && search.trim()) {
       where.push("r.name LIKE ? ESCAPE '!'");
       params.push(`%${search.trim().replace(/[!%_]/g, "!$&")}%`);
     }
+
     const filter = where.length ? ` WHERE ${where.join(" AND ")}` : "";
     const [[count]] = await pool.query(`SELECT COUNT(*) AS total FROM recipes r${filter}`, params);
-    const sql = `SELECT r.id, r.name, r.cook_time_minutes, r.difficulty, r.category_id, c.name AS category_name
-      FROM recipes r JOIN categories c ON r.category_id = c.id${filter} ORDER BY ${sorts[sort]}, r.id ASC LIMIT ? OFFSET ?`;
-    const [rows] = await pool.query(sql, [...params, Number(limit), (Number(page) - 1) * Number(limit)]);
-    res.status(200).json({ message: "ดึงรายการสูตรอาหารสำเร็จ", data: rows,
-      pagination: { page: Number(page), limit: Number(limit), total: count.total, totalPages: Math.ceil(count.total / Number(limit)) } });
+    const sql = `
+      SELECT r.id, r.name, r.cook_time_minutes, r.difficulty, r.category_id, c.name AS category_name
+      FROM recipes r
+      JOIN categories c ON r.category_id = c.id${filter}
+      ORDER BY ${sorts[sort]}, r.id ASC
+      LIMIT ? OFFSET ?
+    `;
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+    const [rows] = await pool.query(sql, [...params, limitNum, (pageNum - 1) * limitNum]);
+
+    res.status(200).json({
+      message: "ดึงรายการสูตรอาหารสำเร็จ",
+      data: rows,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: count.total,
+        totalPages: Math.ceil(count.total / limitNum),
+      },
+    });
   } catch (err) {
     next(err);
   }

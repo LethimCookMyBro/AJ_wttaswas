@@ -8,7 +8,7 @@ const tables = ["categories", "users", "recipes", "ingredients", "recipe_ingredi
 const accounts = [
   { id: 1, username: "chef_somchai", key: "CLOUD_CHEF_PASSWORD" },
   { id: 2, username: "foodie_somying", key: "CLOUD_MEMBER_PASSWORD" },
-  { id: 3, username: "admin_wittawas", key: "CLOUD_ADMIN_PASSWORD" },
+  { id: 3, username: "admin_web", key: "CLOUD_ADMIN_PASSWORD" },
 ];
 
 function databaseSql(text) {

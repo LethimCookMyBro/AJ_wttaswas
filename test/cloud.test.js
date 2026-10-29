@@ -13,7 +13,7 @@ const env = {
 const tables = ["categories", "users", "recipes", "ingredients", "recipe_ingredients", "ratings"];
 const encoded = "scrypt$" + "a".repeat(32) + "$" + "b".repeat(128);
 function database({ existing = tables, initialized = true, missingVersion = false, wrongIdentity = false } = {}) {
-  const users = ["chef_somchai", "foodie_somying", "admin_wittawas"].map((username, i) => ({ id: i + 1, username, password_hash: initialized ? encoded : null }));
+  const users = ["chef_somchai", "foodie_somying", "admin_web"].map((username, i) => ({ id: i + 1, username, password_hash: initialized ? encoded : null }));
   if (wrongIdentity) users[0].username = "unrelated";
   const connection = { end: jest.fn(), query: jest.fn(async (sql, params) => {
     if (sql.startsWith("SELECT TABLE_NAME")) return [existing.map(TABLE_NAME => ({ TABLE_NAME }))];

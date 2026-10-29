@@ -65,7 +65,7 @@ const pause = (ms) => new Promise(resolve => setTimeout(resolve, ms));
       const response = await request(app).post("/api/v1/auth/login").send({ username, password: process.env.DEMO_PASSWORD });
       assert.equal(response.status, 200); return response.body.data.token;
     };
-    const chef = await login("chef_somchai"), member = await login("foodie_somying"), admin = await login("admin_wittawas");
+    const chef = await login("chef_somchai"), member = await login("foodie_somying"), admin = await login("admin_web");
     record("password login for chef, member and admin");
     const call = async (method, route, body, token, expected) => {
       let req = request(app)[method](route); if (token) req = req.set("Authorization", `Bearer ${token}`); if (body !== undefined) req = req.send(body);

@@ -1,17 +1,49 @@
+// ฟังก์ชันช่วยดึง DOM element และเก็บสถานะหลักของหน้าเว็บ (State)
 const byId = (id) => document.getElementById(id);
-const state = { recipes: [], selectedId: null, detailRequest: 0, filter: '', search: '', successId: null, session: null, returnTo: '#recipes', detailReady: false, page: 1, limit: 9, sort: 'id_asc', pagination: { total: 0, totalPages: 0 }, listRequest: 0, difficulty: '', catalog: [], catalogReady: false, currentRecipe: null, ingredientRowId: 0, savingRecipe: false, savingIngredient: false, deletingRecipe: false };
+
+const state = {
+  recipes: [],
+  selectedId: null,
+  detailRequest: 0,
+  filter: '',
+  search: '',
+  successId: null,
+  session: null,
+  returnTo: '#recipes',
+  detailReady: false,
+  page: 1,
+  limit: 9,
+  sort: 'id_asc',
+  pagination: { total: 0, totalPages: 0 },
+  listRequest: 0,
+  difficulty: '',
+  catalog: [],
+  catalogReady: false,
+  currentRecipe: null,
+  ingredientRowId: 0,
+  savingRecipe: false,
+  savingIngredient: false,
+  deletingRecipe: false,
+};
+
 const difficultyNames = { easy: 'ง่าย', medium: 'ปานกลาง', hard: 'ยาก' };
 const recipePhotos = { 1: 'pad-krapao', 2: 'mango-rice', 3: 'pepper-chicken' };
 
+// แสดงข้อความสถานะหรือแจ้งเตือนข้อผิดพลาดบนหน้าจอ
 function status(id, text, error = false) {
   byId(id).textContent = text;
   byId(id).classList.toggle('error', error);
 }
 
+// ฟังก์ชันกลางสำหรับเรียก REST API พร้อมแนบ JWT Bearer Token และตั้งเวลา Timeout
 async function api(route, options = {}, envelope = false) {
   const response = await fetch(`/api/v1${route}`, {
     ...options,
-    headers: { 'Content-Type': 'application/json', ...(state.session ? { Authorization: `Bearer ${state.session.token}` } : {}), ...options.headers },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(state.session ? { Authorization: `Bearer ${state.session.token}` } : {}),
+      ...options.headers,
+    },
     signal: AbortSignal.timeout(route.split('?')[0] === '/external/meal-ideas' ? 12000 : 6000),
   });
   const body = await response.json();
@@ -20,16 +52,20 @@ async function api(route, options = {}, envelope = false) {
     renderSession();
     throw new Error('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่');
   }
-  if (!response.ok) throw new Error(body.error?.message || `API ตอบกลับ ${response.status}`);
+  if (!response.ok) {
+    throw new Error(body.error?.message || `API ตอบกลับ ${response.status}`);
+  }
   return envelope ? body : body.data;
 }
 
+// แปลงข้อผิดพลาดจากเครือข่ายหรือ API เป็นข้อความภาษาไทยที่เข้าใจง่าย
 function errorMessage(error) {
   if (error.name === 'TimeoutError') return 'รอนานเกินไป กรุณาลองใหม่';
   if (error instanceof TypeError) return 'เชื่อมต่อ API ไม่ได้ ตรวจว่าเซิร์ฟเวอร์ยังเปิดอยู่ แล้วลองใหม่';
   return error.message;
 }
 
+// สร้าง DOM element อย่างปลอดภัยโดยใช้ textContent เพื่อป้องกัน XSS
 function element(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -37,40 +73,74 @@ function element(tag, className, text) {
   return node;
 }
 
-function listItem(text) { return element('li', '', text); }
-function photoFor(id) { return `/assets/${recipePhotos[id] || 'fried-rice'}.webp`; }
+function listItem(text) {
+  return element('li', '', text);
+}
 
+function photoFor(id) {
+  return `/assets/${recipePhotos[id] || 'fried-rice'}.webp`;
+}
+
+// วาดรายการการ์ดสูตรอาหาร ปุ่มตัวกรองหมวดหมู่ และสถานะการแบ่งหน้า (Pagination)
 function renderRecipes() {
   const visible = state.recipes;
-  byId('recipe-list').replaceChildren(...visible.map((recipe) => {
-    const item = element('li', 'recipe-card');
-    const link = element('a');
-    link.href = `#recipe/${recipe.id}`;
-    link.setAttribute('aria-label', `ดูสูตร ${recipe.name}`);
-    const photo = element('div', 'card-photo');
-    const image = element('img');
-    image.src = photoFor(recipe.id);
-    image.alt = recipePhotos[recipe.id] ? `ภาพประกอบ${recipe.name}` : 'ภาพประกอบอาหารทั่วไป ไม่ใช่ภาพของสูตรนี้';
-    image.width = 700;
-    image.height = 450;
-    image.loading = 'lazy';
-    photo.append(image, element('span', 'photo-label', recipePhotos[recipe.id] ? 'ภาพประกอบ' : 'ภาพประกอบทั่วไป'));
-    const content = element('div', 'card-content');
-    const meta = element('div', 'card-meta');
-    meta.append(element('span', '', `${recipe.cook_time_minutes} นาที`), element('span', '', `ระดับ${difficultyNames[recipe.difficulty]}`));
-    const arrow = element('span', 'card-direction');
-    arrow.append(arrowIcon());
-    arrow.setAttribute('aria-hidden', 'true');
-    meta.append(arrow);
-    content.append(element('p', 'card-category', recipe.category_name), element('h3', '', recipe.name), meta);
-    link.append(photo, content);
-    item.append(link);
-    return item;
-  }));
+  byId('recipe-list').replaceChildren(
+    ...visible.map((recipe) => {
+      const item = element('li', 'recipe-card');
+      const link = element('a');
+      link.href = `#recipe/${recipe.id}`;
+      link.setAttribute('aria-label', `ดูสูตร ${recipe.name}`);
+
+      const photo = element('div', 'card-photo');
+      const image = element('img');
+      image.src = photoFor(recipe.id);
+      image.alt = recipePhotos[recipe.id]
+        ? `ภาพประกอบ${recipe.name}`
+        : 'ภาพประกอบอาหารทั่วไป ไม่ใช่ภาพของสูตรนี้';
+      image.width = 700;
+      image.height = 450;
+      image.loading = 'lazy';
+      photo.append(
+        image,
+        element('span', 'photo-label', recipePhotos[recipe.id] ? 'ภาพประกอบ' : 'ภาพประกอบทั่วไป')
+      );
+
+      const content = element('div', 'card-content');
+      const meta = element('div', 'card-meta');
+      meta.append(
+        element('span', '', `${recipe.cook_time_minutes} นาที`),
+        element('span', '', `ระดับ${difficultyNames[recipe.difficulty]}`)
+      );
+
+      const arrow = element('span', 'card-direction');
+      arrow.append(arrowIcon());
+      arrow.setAttribute('aria-hidden', 'true');
+      meta.append(arrow);
+
+      content.append(
+        element('p', 'card-category', recipe.category_name),
+        element('h3', '', recipe.name),
+        meta
+      );
+      link.append(photo, content);
+      item.append(link);
+      return item;
+    })
+  );
+
   if (!visible.length) {
     const empty = element('li', 'empty-state');
     const filtered = !!(state.search || state.filter || state.difficulty);
-    empty.append(element('h3', '', filtered ? 'ยังไม่เจอสูตรที่คุณหา' : 'ครัวยังไม่มีสูตรอาหาร'), element('p', '', filtered ? 'ลองเปลี่ยนคำค้น หมวดหมู่ หรือความยาก หรือเริ่มใหม่ด้วยสูตรทั้งหมด' : 'ระหว่างรอสูตรใหม่ ลองหาไอเดียจากวัตถุดิบที่มีได้'));
+    empty.append(
+      element('h3', '', filtered ? 'ยังไม่เจอสูตรที่คุณหา' : 'ครัวยังไม่มีสูตรอาหาร'),
+      element(
+        'p',
+        '',
+        filtered
+          ? 'ลองเปลี่ยนคำค้น หมวดหมู่ หรือความยาก หรือเริ่มใหม่ด้วยสูตรทั้งหมด'
+          : 'ระหว่างรอสูตรใหม่ ลองหาไอเดียจากวัตถุดิบที่มีได้'
+      )
+    );
     if (filtered) {
       const reset = element('button', 'button primary', 'ล้างตัวกรองทั้งหมด');
       reset.type = 'button';
@@ -83,27 +153,42 @@ function renderRecipes() {
     }
     if (state.session && ['chef', 'admin'].includes(state.session.user.role)) {
       const create = element('a', 'button secondary', 'แบ่งปันสูตรอาหาร');
-      create.href = '#create'; empty.append(create);
+      create.href = '#create';
+      empty.append(create);
     }
     byId('recipe-list').append(empty);
   }
+
   for (const chip of byId('category-chips').querySelectorAll('button')) {
     const active = chip.dataset.category === state.filter;
     chip.classList.toggle('active', active);
     chip.setAttribute('aria-pressed', String(active));
   }
-  status('list-status', `${visible.length} สูตรในหน้านี้ · ทั้งหมด ${state.pagination.total} สูตร${state.search ? 'ที่ตรงกับคำค้น' : ''}`);
-  byId('page-status').textContent = state.pagination.totalPages ? `หน้า ${state.page} จาก ${state.pagination.totalPages}` : 'ไม่มีรายการ';
+
+  status(
+    'list-status',
+    `${visible.length} สูตรในหน้านี้ · ทั้งหมด ${state.pagination.total} สูตร${state.search ? 'ที่ตรงกับคำค้น' : ''}`
+  );
+  byId('page-status').textContent = state.pagination.totalPages
+    ? `หน้า ${state.page} จาก ${state.pagination.totalPages}`
+    : 'ไม่มีรายการ';
   byId('previous-page').disabled = state.page <= 1;
   byId('next-page').disabled = state.page >= state.pagination.totalPages;
 }
 
+// ล้างค่าการค้นหาและตัวกรองทั้งหมดกลับเป็นค่าเริ่มต้น
 async function resetRecipeFilters() {
-  state.search = ''; state.filter = ''; state.difficulty = ''; state.page = 1;
-  byId('recipe-search').value = ''; byId('category-filter').value = ''; byId('difficulty-filter').value = '';
+  state.search = '';
+  state.filter = '';
+  state.difficulty = '';
+  state.page = 1;
+  byId('recipe-search').value = '';
+  byId('category-filter').value = '';
+  byId('difficulty-filter').value = '';
   await loadRecipes();
 }
 
+// ดึงรายการสูตรอาหารจาก GET /api/v1/recipes ตามคำค้น หมวดหมู่ ความยาก และการเรียงลำดับ
 async function loadRecipes() {
   const request = ++state.listRequest;
   status('list-status', 'กำลังโหลดสูตรอาหาร...');
@@ -119,7 +204,9 @@ async function loadRecipes() {
     const result = await api(`/recipes?${query}`, {}, true);
     if (request !== state.listRequest) return;
     state.recipes = result.data;
-    if (!state.search && !state.filter && !state.difficulty && state.page === 1) updateFeatured(result.data[0]);
+    if (!state.search && !state.filter && !state.difficulty && state.page === 1) {
+      updateFeatured(result.data[0]);
+    }
     state.pagination = result.pagination;
     renderRecipes();
   } catch (error) {
@@ -136,6 +223,7 @@ async function loadRecipes() {
   }
 }
 
+// อัปเดตการแสดงผลปุ่มเมนูและฟอร์มตามสถานะการล็อกอินและสิทธิ์ผู้ใช้ (Role-based UI)
 function renderSession() {
   const user = state.session?.user;
   const canCreate = !!user && ['chef', 'admin'].includes(user.role);
@@ -144,24 +232,38 @@ function renderSession() {
   byId('session-user').hidden = !user;
   byId('session-user').textContent = user ? `${user.username} · ${user.role}` : '';
   byId('create-fields').disabled = !canCreate || state.savingRecipe;
+
   const createLink = document.querySelector('.nav-create');
   if (createLink) createLink.hidden = !!user && !canCreate;
+
   const own = canManageRecipe();
   byId('owner-tools').hidden = !own;
   if (!own) byId('delete-confirm').hidden = true;
+
   byId('create-auth').hidden = canCreate;
-  if (user && !canCreate) byId('create-auth').textContent = 'บัญชี member อ่านและให้คะแนนได้ แต่การแบ่งปันสูตรต้องใช้บัญชี chef หรือ admin';
-  else if (!user) {
+  if (user && !canCreate) {
+    byId('create-auth').textContent =
+      'บัญชี member อ่านและให้คะแนนได้ แต่การแบ่งปันสูตรต้องใช้บัญชี chef หรือ admin';
+  } else if (!user) {
     const link = element('a', '', 'เข้าสู่ระบบ');
     link.href = '#login';
-    link.addEventListener('click', () => { state.returnTo = '#create'; });
-    byId('create-auth').replaceChildren(document.createTextNode('เข้าสู่ระบบด้วยบัญชี chef หรือ admin เพื่อแบ่งปันสูตร '), link);
+    link.addEventListener('click', () => {
+      state.returnTo = '#create';
+    });
+    byId('create-auth').replaceChildren(
+      document.createTextNode('เข้าสู่ระบบด้วยบัญชี chef หรือ admin เพื่อแบ่งปันสูตร '),
+      link
+    );
   }
+
   byId('rating-auth').hidden = !!user;
-  byId('rating-help').textContent = user ? `รีวิวในชื่อ ${user.username} · ให้คะแนนได้ครั้งเดียวต่อสูตร` : 'เข้าสู่ระบบเพื่อให้คะแนนสูตรนี้';
+  byId('rating-help').textContent = user
+    ? `รีวิวในชื่อ ${user.username} · ให้คะแนนได้ครั้งเดียวต่อสูตร`
+    : 'เข้าสู่ระบบเพื่อให้คะแนนสูตรนี้';
   byId('rating-fields').disabled = !user || !state.detailReady;
 }
 
+// โหลดรายละเอียดสูตรอาหารและคะแนนรีวิวพร้อมกันผ่าน Promise.all
 async function loadDetail(id) {
   const changed = state.selectedId !== id;
   state.selectedId = id;
@@ -198,19 +300,32 @@ async function loadDetail(id) {
     byId('recipe-meta').textContent = `${recipe.cook_time_minutes} นาที · ระดับ${difficultyNames[recipe.difficulty]} · สูตร #${id}`;
     state.currentRecipe = recipe;
     byId('detail-image').src = photoFor(id);
-    byId('detail-image').alt = recipePhotos[id] ? `ภาพประกอบ ${recipe.name}` : 'ภาพประกอบอาหารทั่วไป ไม่ใช่ภาพของสูตรนี้';
+    byId('detail-image').alt = recipePhotos[id]
+      ? `ภาพประกอบ ${recipe.name}`
+      : 'ภาพประกอบอาหารทั่วไป ไม่ใช่ภาพของสูตรนี้';
     byId('detail-image').hidden = false;
     renderInstructions(recipe.instructions);
-    byId('ingredients').replaceChildren(...(recipe.ingredients.length
-      ? recipe.ingredients.map(ingredientChecklist)
-      : [listItem('สูตรนี้ยังไม่ได้เพิ่มวัตถุดิบ')]));
+    byId('ingredients').replaceChildren(
+      ...(recipe.ingredients.length
+        ? recipe.ingredients.map(ingredientChecklist)
+        : [listItem('สูตรนี้ยังไม่ได้เพิ่มวัตถุดิบ')])
+    );
     populateDetailIngredients(recipe.ingredients);
-    byId('rating-summary').textContent = reviews.ratingCount ? `${reviews.averageScore}/5 จาก ${reviews.ratingCount} รีวิว` : 'ยังไม่มีคะแนน';
-    byId('ratings').replaceChildren(...(reviews.ratings.length ? reviews.ratings.map((review) => {
-      const item = element('li');
-      item.append(element('strong', '', `${review.username} · ${review.ratingScore}/5`), element('p', '', review.reviewComment || 'ไม่ได้เขียนความคิดเห็น'));
-      return item;
-    }) : [element('li', 'empty-review', 'ยังไม่มีรีวิว ลองทำแล้วมาเล่าให้ฟังเป็นคนแรกได้เลย')]));
+    byId('rating-summary').textContent = reviews.ratingCount
+      ? `${reviews.averageScore}/5 จาก ${reviews.ratingCount} รีวิว`
+      : 'ยังไม่มีคะแนน';
+    byId('ratings').replaceChildren(
+      ...(reviews.ratings.length
+        ? reviews.ratings.map((review) => {
+            const item = element('li');
+            item.append(
+              element('strong', '', `${review.username} · ${review.ratingScore}/5`),
+              element('p', '', review.reviewComment || 'ไม่ได้เขียนความคิดเห็น')
+            );
+            return item;
+          })
+        : [element('li', 'empty-review', 'ยังไม่มีรีวิว ลองทำแล้วมาเล่าให้ฟังเป็นคนแรกได้เลย')])
+    );
     state.detailReady = true;
     renderSession();
     status('detail-status', '');
@@ -226,20 +341,52 @@ async function loadDetail(id) {
   }
 }
 
+// จัดการการสลับหน้าจอ (SPA Routing) ตามค่า URL Hash
 function showRoute() {
   const hash = location.hash;
   const recipeMatch = /^#recipe\/([1-9]\d*)$/.exec(hash);
-  const view = recipeMatch ? 'detail' : hash === '#create' ? 'create' : hash === '#ideas' ? 'ideas' : hash === '#login' ? 'login' : 'home';
+  const view = recipeMatch
+    ? 'detail'
+    : hash === '#create'
+      ? 'create'
+      : hash === '#ideas'
+        ? 'ideas'
+        : hash === '#login'
+          ? 'login'
+          : 'home';
   const current = document.querySelector('[data-view]:not([hidden])')?.dataset.view;
-  for (const section of document.querySelectorAll('[data-view]')) section.hidden = section.dataset.view !== view;
-  for (const link of document.querySelectorAll('[data-nav]')) {
-    if (link.dataset.nav === (view === 'detail' ? 'home' : view)) link.setAttribute('aria-current', 'page');
-    else link.removeAttribute('aria-current');
+  for (const section of document.querySelectorAll('[data-view]')) {
+    section.hidden = section.dataset.view !== view;
   }
-  const heading = { home: 'page-title', create: 'create-heading', ideas: 'ideas-heading', detail: 'detail-heading', login: 'login-heading' }[view];
-  document.title = `${view === 'login' ? 'เข้าสู่ระบบ' : view === 'create' ? 'แบ่งปันสูตรอาหาร' : view === 'ideas' ? 'ไอเดียเมนู' : 'มื้อนี้ทำอะไรดี?'} | ครัวแบ่งปัน`;
-  if (recipeMatch) loadDetail(Number(recipeMatch[1]));
-  else { state.detailRequest += 1; byId('detail').setAttribute('aria-busy', 'false'); }
+  for (const link of document.querySelectorAll('[data-nav]')) {
+    if (link.dataset.nav === (view === 'detail' ? 'home' : view)) {
+      link.setAttribute('aria-current', 'page');
+    } else {
+      link.removeAttribute('aria-current');
+    }
+  }
+  const heading = {
+    home: 'page-title',
+    create: 'create-heading',
+    ideas: 'ideas-heading',
+    detail: 'detail-heading',
+    login: 'login-heading',
+  }[view];
+  document.title = `${
+    view === 'login'
+      ? 'เข้าสู่ระบบ'
+      : view === 'create'
+        ? 'แบ่งปันสูตรอาหาร'
+        : view === 'ideas'
+          ? 'ไอเดียเมนู'
+          : 'มื้อนี้ทำอะไรดี?'
+  } | ครัวแบ่งปัน`;
+  if (recipeMatch) {
+    loadDetail(Number(recipeMatch[1]));
+  } else {
+    state.detailRequest += 1;
+    byId('detail').setAttribute('aria-busy', 'false');
+  }
   if (current !== view || recipeMatch) {
     window.scrollTo(0, 0);
     byId(heading).focus({ preventScroll: true });
@@ -248,6 +395,7 @@ function showRoute() {
   if (hash === '#main') byId('main').focus();
 }
 
+// ผูก Event สำหรับการกรองหมวดหมู่ ค้นหา เรียงลำดับ เปลี่ยนหน้า และเข้าสู่ระบบ
 byId('category-chips').addEventListener('click', (event) => {
   const chip = event.target.closest('button[data-category]');
   if (!chip) return;
@@ -256,7 +404,13 @@ byId('category-chips').addEventListener('click', (event) => {
   state.page = 1;
   loadRecipes();
 });
-byId('category-filter').addEventListener('change', () => { state.filter = byId('category-filter').value; state.page = 1; loadRecipes(); });
+
+byId('category-filter').addEventListener('change', () => {
+  state.filter = byId('category-filter').value;
+  state.page = 1;
+  loadRecipes();
+});
+
 let searchTimer;
 byId('recipe-search').addEventListener('input', () => {
   clearTimeout(searchTimer);
@@ -264,40 +418,100 @@ byId('recipe-search').addEventListener('input', () => {
   state.page = 1;
   searchTimer = setTimeout(loadRecipes, 300);
 });
-byId('difficulty-filter').addEventListener('change', () => { state.difficulty = byId('difficulty-filter').value; state.page = 1; loadRecipes(); });
-byId('recipe-sort').addEventListener('change', () => { state.sort = byId('recipe-sort').value; state.page = 1; loadRecipes(); });
-byId('previous-page').addEventListener('click', () => { if (state.page > 1) { state.page--; loadRecipes(); } });
-byId('next-page').addEventListener('click', () => { if (state.page < state.pagination.totalPages) { state.page++; loadRecipes(); } });
-for (const link of document.querySelectorAll('[data-login-return]')) link.addEventListener('click', () => { state.returnTo = location.hash === '#login' ? '#recipes' : location.hash || '#recipes'; });
-byId('logout').addEventListener('click', () => { state.session = null; renderSession(); status('login-status', 'ออกจากระบบแล้ว'); });
+
+byId('difficulty-filter').addEventListener('change', () => {
+  state.difficulty = byId('difficulty-filter').value;
+  state.page = 1;
+  loadRecipes();
+});
+
+byId('recipe-sort').addEventListener('change', () => {
+  state.sort = byId('recipe-sort').value;
+  state.page = 1;
+  loadRecipes();
+});
+
+byId('previous-page').addEventListener('click', () => {
+  if (state.page > 1) {
+    state.page--;
+    loadRecipes();
+  }
+});
+
+byId('next-page').addEventListener('click', () => {
+  if (state.page < state.pagination.totalPages) {
+    state.page++;
+    loadRecipes();
+  }
+});
+
+for (const link of document.querySelectorAll('[data-login-return]')) {
+  link.addEventListener('click', () => {
+    state.returnTo = location.hash === '#login' ? '#recipes' : location.hash || '#recipes';
+  });
+}
+
+byId('logout').addEventListener('click', () => {
+  state.session = null;
+  renderSession();
+  status('login-status', 'ออกจากระบบแล้ว');
+});
+
 byId('login-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   byId('login-submit').disabled = true;
   status('login-status', 'กำลังเข้าสู่ระบบ...');
   try {
-    state.session = await api('/auth/login', { method: 'POST', body: JSON.stringify({ username: byId('username').value.trim(), password: byId('password').value }) });
+    state.session = await api('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        username: byId('username').value.trim(),
+        password: byId('password').value,
+      }),
+    });
     byId('password').value = '';
     renderSession();
     status('login-status', 'เข้าสู่ระบบสำเร็จ');
     location.hash = state.returnTo;
-  } catch (error) { status('login-status', errorMessage(error), true); }
-  finally { byId('login-submit').disabled = false; }
+  } catch (error) {
+    status('login-status', errorMessage(error), true);
+  } finally {
+    byId('login-submit').disabled = false;
+  }
 });
+
 byId('reload').addEventListener('click', loadRecipes);
 window.addEventListener('hashchange', showRoute);
-document.querySelector('.skip').addEventListener('click', (event) => { event.preventDefault(); byId('main').focus(); });
+document.querySelector('.skip').addEventListener('click', (event) => {
+  event.preventDefault();
+  byId('main').focus();
+});
 
+// บันทึกสูตรอาหารใหม่พร้อมรายการวัตถุดิบแบบ Atomic Transaction (เฉพาะ chef และ admin)
 byId('recipe-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   if (state.savingRecipe) return;
-  if (!state.session || !['chef', 'admin'].includes(state.session.user.role)) return status('create-status', 'กรุณาเข้าสู่ระบบด้วยบัญชี chef หรือ admin', true);
+  if (!state.session || !['chef', 'admin'].includes(state.session.user.role)) {
+    return status('create-status', 'กรุณาเข้าสู่ระบบด้วยบัญชี chef หรือ admin', true);
+  }
   const payload = {
-    name: byId('name').value.trim(), categoryId: Number(byId('category').value),
-    instructions: byId('steps').value.trim(), cookTimeMinutes: Number(byId('minutes').value), difficulty: byId('difficulty').value,
+    name: byId('name').value.trim(),
+    categoryId: Number(byId('category').value),
+    instructions: byId('steps').value.trim(),
+    cookTimeMinutes: Number(byId('minutes').value),
+    difficulty: byId('difficulty').value,
   };
-  try { payload.ingredients = readIngredientRows(); } catch (error) { return status('create-status', error.message, true); }
-  if (!payload.name || !payload.instructions) return status('create-status', 'กรุณากรอกชื่อสูตรและวิธีทำ ไม่ใช้ช่องว่างอย่างเดียว', true);
-  if (new TextEncoder().encode(JSON.stringify(payload)).length > 10240) return status('create-status', 'ข้อมูลรวมเกิน 10 KB กรุณาลดความยาววิธีทำแล้วลองใหม่', true);
+  try {
+    payload.ingredients = readIngredientRows();
+  } catch (error) {
+    return status('create-status', error.message, true);
+  }
+  if (!payload.name || !payload.instructions) {
+    return status('create-status', 'กรุณากรอกชื่อสูตรและวิธีทำ ไม่ใช้ช่องว่างอย่างเดียว', true);
+  }
+  if (new TextEncoder().encode(JSON.stringify(payload)).length > 10240) {
+    return status('create-status', 'ข้อมูลรวมเกิน 10 KB กรุณาลดความยาววิธีทำแล้วลองใหม่', true);
+  }
   const originRoute = location.hash;
   state.savingRecipe = true;
   byId('save-recipe').disabled = true;
@@ -331,6 +545,7 @@ byId('recipe-form').addEventListener('submit', async (event) => {
   }
 });
 
+// ส่งคะแนนและรีวิวสูตรอาหารไปยัง POST /api/v1/recipes/:id/ratings แล้วรีเฟรชค่าเฉลี่ย
 byId('rating-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   const id = state.selectedId;
@@ -338,41 +553,63 @@ byId('rating-form').addEventListener('submit', async (event) => {
   if (!state.session) return status('rating-status', 'กรุณาเข้าสู่ระบบเพื่อให้คะแนน', true);
   const request = state.detailRequest;
   const reviewComment = byId('review').value.trim();
-  const payload = { ratingScore: Number(byId('score').value), ...(reviewComment ? { reviewComment } : {}) };
+  const payload = {
+    ratingScore: Number(byId('score').value),
+    ...(reviewComment ? { reviewComment } : {}),
+  };
   byId('rating-fields').disabled = true;
   status('rating-status', 'กำลังบันทึกคะแนน...');
   try {
     await api(`/recipes/${id}/ratings`, { method: 'POST', body: JSON.stringify(payload) });
     if (state.selectedId === id && state.detailRequest === request) {
       event.target.reset();
-      if (await loadDetail(id)) status('rating-status', 'บันทึกคะแนนสำเร็จ คะแนนด้านบนอัปเดตจาก API แล้ว');
-      else if (state.selectedId === id && !byId('detail').hidden) status('rating-status', 'บันทึกคะแนนแล้ว แต่ยังโหลดผลล่าสุดไม่ได้ กรุณาเปิดสูตรอีกครั้ง', true);
+      if (await loadDetail(id)) {
+        status('rating-status', 'บันทึกคะแนนสำเร็จ คะแนนด้านบนอัปเดตจาก API แล้ว');
+      } else if (state.selectedId === id && !byId('detail').hidden) {
+        status('rating-status', 'บันทึกคะแนนแล้ว แต่ยังโหลดผลล่าสุดไม่ได้ กรุณาเปิดสูตรอีกครั้ง', true);
+      }
     }
   } catch (error) {
-    if (state.selectedId === id && state.detailRequest === request) status('rating-status', errorMessage(error), true);
+    if (state.selectedId === id && state.detailRequest === request) {
+      status('rating-status', errorMessage(error), true);
+    }
   } finally {
-    if (state.selectedId === id && state.detailRequest === request && !byId('detail').hidden) renderSession();
+    if (state.selectedId === id && state.detailRequest === request && !byId('detail').hidden) {
+      renderSession();
+    }
   }
 });
 
+// ค้นหาไอเดียเมนูจากบริการภายนอก (TheMealDB) พร้อมรองรับโหมดข้อมูลสำรองเมื่อระบบภายนอกขัดข้อง
 byId('ideas-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   const ingredient = byId('ingredient').value.trim();
-  if (!/^[A-Za-z][A-Za-z _-]{0,49}$/.test(ingredient)) return status('ideas-status', 'ใช้ชื่อวัตถุดิบภาษาอังกฤษ เช่น chicken_breast', true);
+  if (!/^[A-Za-z][A-Za-z _-]{0,49}$/.test(ingredient)) {
+    return status('ideas-status', 'ใช้ชื่อวัตถุดิบภาษาอังกฤษ เช่น chicken_breast', true);
+  }
   const button = event.target.querySelector('button');
   button.disabled = true;
   status('ideas-status', 'กำลังค้นเมนูจากบริการภายนอก กรุณารอสักครู่...');
   byId('ideas-list').replaceChildren();
   try {
     const result = await api(`/external/meal-ideas?ingredient=${encodeURIComponent(ingredient)}`);
-    byId('ideas-list').replaceChildren(...result.ideas.map((idea) => {
-      const item = element('li', 'idea-result');
-      item.append(element('span', 'idea-origin', result.degraded ? 'รายการสำรอง' : 'TheMealDB'), element('h3', '', idea.name));
-      return item;
-    }));
-    status('ideas-status', result.degraded
-      ? `บริการภายนอกไม่พร้อม แสดงรายการสำรองของระบบ (${result.reason}, ลอง ${result.attempts} ครั้ง)`
-      : `ข้อมูลจาก TheMealDB พบ ${result.ideas.length} ไอเดีย${result.ideas.length ? '' : ' ลองวัตถุดิบอื่นอีกครั้ง'}`, result.degraded);
+    byId('ideas-list').replaceChildren(
+      ...result.ideas.map((idea) => {
+        const item = element('li', 'idea-result');
+        item.append(
+          element('span', 'idea-origin', result.degraded ? 'รายการสำรอง' : 'TheMealDB'),
+          element('h3', '', idea.name)
+        );
+        return item;
+      })
+    );
+    status(
+      'ideas-status',
+      result.degraded
+        ? `บริการภายนอกไม่พร้อม แสดงรายการสำรองของระบบ (${result.reason}, ลอง ${result.attempts} ครั้ง)`
+        : `ข้อมูลจาก TheMealDB พบ ${result.ideas.length} ไอเดีย${result.ideas.length ? '' : ' ลองวัตถุดิบอื่นอีกครั้ง'}`,
+      result.degraded
+    );
   } catch (error) {
     status('ideas-status', errorMessage(error), true);
   } finally {
@@ -393,6 +630,7 @@ function arrowIcon() {
   return svg;
 }
 
+// อัปเดตการ์ดสูตรแนะนำบนส่วนหัวของหน้าแรก
 function updateFeatured(recipe) {
   state.featuredId = recipe?.id || null;
   const link = byId('featured-recipe');
@@ -402,14 +640,23 @@ function updateFeatured(recipe) {
   byId('featured-name').textContent = recipe.name;
   byId('featured-meta').textContent = `${recipe.cook_time_minutes} นาที · ${difficultyNames[recipe.difficulty]}`;
   const photo = document.querySelector('.hero-visual > img');
-  if (photo) { photo.src = photoFor(recipe.id); photo.alt = recipePhotos[recipe.id] ? `ภาพประกอบ${recipe.name}` : 'ภาพประกอบอาหารทั่วไป ไม่ใช่ภาพของสูตรนี้'; }
+  if (photo) {
+    photo.src = photoFor(recipe.id);
+    photo.alt = recipePhotos[recipe.id]
+      ? `ภาพประกอบ${recipe.name}`
+      : 'ภาพประกอบอาหารทั่วไป ไม่ใช่ภาพของสูตรนี้';
+  }
 }
 
 function renderInstructions(text) {
   // Split only explicit numbered/newline steps. Never invent missing recipe content.
-  const steps = String(text).split(/(?:\r?\n)+|(?:^|\s)(?=\d+[.)]\s)/u)
-    .map((step) => step.replace(/^\s*\d+[.)]\s*/, '').trim()).filter(Boolean);
-  byId('instructions').replaceChildren(...steps.map((step) => element('li', 'instruction-step', step)));
+  const steps = String(text)
+    .split(/(?:\r?\n)+|(?:^|\s)(?=\d+[.)]\s)/u)
+    .map((step) => step.replace(/^\s*\d+[.)]\s*/, '').trim())
+    .filter(Boolean);
+  byId('instructions').replaceChildren(
+    ...steps.map((step) => element('li', 'instruction-step', step))
+  );
 }
 
 function ingredientChecklist(ingredient) {
@@ -417,18 +664,35 @@ function ingredientChecklist(ingredient) {
   const label = element('label', 'ingredient-check');
   const check = element('input');
   check.type = 'checkbox';
-  const unitNames = { grams: 'กรัม', gram: 'กรัม', ml: 'มล.', pieces: 'ชิ้น', piece: 'ชิ้น', cloves: 'กลีบ' };
-  label.append(check, element('span', '', ingredient.name), element('strong', '', `${ingredient.quantity} ${unitNames[ingredient.unit] || ingredient.unit}`));
+  const unitNames = {
+    grams: 'กรัม',
+    gram: 'กรัม',
+    ml: 'มล.',
+    pieces: 'ชิ้น',
+    piece: 'ชิ้น',
+    cloves: 'กลีบ',
+  };
+  label.append(
+    check,
+    element('span', '', ingredient.name),
+    element('strong', '', `${ingredient.quantity} ${unitNames[ingredient.unit] || ingredient.unit}`)
+  );
   li.append(label);
   return li;
 }
 
+// ตรวจสอบว่าผู้ใช้ปัจจุบันเป็นเจ้าของสูตรหรือเป็น admin ที่มีสิทธิ์แก้ไข/ลบสูตรได้หรือไม่
 function canManageRecipe() {
   const user = state.session?.user;
-  return !!user && !!state.currentRecipe && ['chef', 'admin'].includes(user.role)
-    && (user.role === 'admin' || Number(state.currentRecipe.author_id) === Number(user.id));
+  return (
+    !!user &&
+    !!state.currentRecipe &&
+    ['chef', 'admin'].includes(user.role) &&
+    (user.role === 'admin' || Number(state.currentRecipe.author_id) === Number(user.id))
+  );
 }
 
+// สร้างตัวเลือก <option> สำหรับคลังวัตถุดิบโดยตัดวัตถุดิบที่ใช้ไปแล้วออก
 function catalogOptions(select, excluded = []) {
   select.replaceChildren(element('option', '', 'เลือกวัตถุดิบ'));
   select.firstChild.value = '';
@@ -439,6 +703,7 @@ function catalogOptions(select, excluded = []) {
   }
 }
 
+// โหลดรายการคลังวัตถุดิบทั้งหมดจาก GET /api/v1/ingredients
 async function loadCatalog() {
   byId('add-ingredient-row').disabled = true;
   byId('retry-catalog').hidden = true;
@@ -460,14 +725,21 @@ async function loadCatalog() {
   }
 }
 
+// เพิ่มแถวกรอกวัตถุดิบในฟอร์มสร้างสูตรอาหาร (จำกัดสูงสุด 50 รายการ)
 function addIngredientRow() {
   if (!state.catalogReady || !state.catalog.length) return;
   const rows = byId('ingredient-rows');
-  if (rows.children.length >= 50) return status('catalog-status', 'เพิ่มได้สูงสุด 50 รายการต่อสูตร', true);
+  if (rows.children.length >= 50) {
+    return status('catalog-status', 'เพิ่มได้สูงสุด 50 รายการต่อสูตร', true);
+  }
   const key = ++state.ingredientRowId;
   const row = element('div', 'ingredient-row');
   row.dataset.row = key;
-  for (const [name, title] of [['ingredient', 'วัตถุดิบ'], ['quantity', 'ปริมาณ'], ['unit', 'หน่วย']]) {
+  for (const [name, title] of [
+    ['ingredient', 'วัตถุดิบ'],
+    ['quantity', 'ปริมาณ'],
+    ['unit', 'หน่วย'],
+  ]) {
     const field = element('div');
     const label = element('label', '', title);
     const id = `recipe-${name}-${key}`;
@@ -477,22 +749,40 @@ function addIngredientRow() {
     input.dataset.field = name;
     input.required = true;
     if (name === 'ingredient') catalogOptions(input);
-    if (name === 'quantity') { input.type = 'number'; input.min = '0.01'; input.max = '999999.99'; input.step = '0.01'; input.value = '1'; }
-    if (name === 'unit') { input.maxLength = 50; input.placeholder = 'เช่น กรัม'; }
-    field.append(label, input); row.append(field);
+    if (name === 'quantity') {
+      input.type = 'number';
+      input.min = '0.01';
+      input.max = '999999.99';
+      input.step = '0.01';
+      input.value = '1';
+    }
+    if (name === 'unit') {
+      input.maxLength = 50;
+      input.placeholder = 'เช่น กรัม';
+    }
+    field.append(label, input);
+    row.append(field);
   }
   const remove = element('button', 'remove-ingredient', 'ลบ');
-  remove.type = 'button'; remove.setAttribute('aria-label', `ลบวัตถุดิบแถว ${key}`);
-  remove.addEventListener('click', () => { row.remove(); byId('add-ingredient-row').focus(); });
+  remove.type = 'button';
+  remove.setAttribute('aria-label', `ลบวัตถุดิบแถว ${key}`);
+  remove.addEventListener('click', () => {
+    row.remove();
+    byId('add-ingredient-row').focus();
+  });
   row.append(remove);
   row.querySelector('select').addEventListener('change', (event) => {
     const selected = state.catalog.find((item) => item.id === Number(event.target.value));
     const units = { grams: 'กรัม', ml: 'มล.', pieces: 'ชิ้น', cloves: 'กลีบ' };
-    if (selected) row.querySelector('[data-field="unit"]').value = units[selected.unit_type] || selected.unit_type;
+    if (selected) {
+      row.querySelector('[data-field="unit"]').value = units[selected.unit_type] || selected.unit_type;
+    }
   });
-  rows.append(row); row.querySelector('select').focus();
+  rows.append(row);
+  row.querySelector('select').focus();
 }
 
+// อ่านและตรวจสอบความถูกต้องของแถววัตถุดิบ (ห้ามซ้ำ และทศนิยมไม่เกิน 2 ตำแหน่ง)
 function readIngredientRows() {
   const entries = [...byId('ingredient-rows').querySelectorAll('.ingredient-row')].map((row) => ({
     ingredientId: Number(row.querySelector('[data-field="ingredient"]').value),
@@ -501,8 +791,19 @@ function readIngredientRows() {
   }));
   const ids = new Set();
   for (const entry of entries) {
-    if (!entry.ingredientId || !entry.unit || entry.quantity < 0.01 || entry.quantity > 999999.99 || !Number.isFinite(entry.quantity) || Number(entry.quantity.toFixed(2)) !== entry.quantity) throw new Error('กรอกวัตถุดิบ ปริมาณ และหน่วยให้ครบ ปริมาณใช้ทศนิยมได้ไม่เกิน 2 ตำแหน่ง');
-    if (ids.has(entry.ingredientId)) throw new Error('มีวัตถุดิบซ้ำกัน กรุณารวมปริมาณไว้ในแถวเดียว');
+    if (
+      !entry.ingredientId ||
+      !entry.unit ||
+      entry.quantity < 0.01 ||
+      entry.quantity > 999999.99 ||
+      !Number.isFinite(entry.quantity) ||
+      Number(entry.quantity.toFixed(2)) !== entry.quantity
+    ) {
+      throw new Error('กรอกวัตถุดิบ ปริมาณ และหน่วยให้ครบ ปริมาณใช้ทศนิยมได้ไม่เกิน 2 ตำแหน่ง');
+    }
+    if (ids.has(entry.ingredientId)) {
+      throw new Error('มีวัตถุดิบซ้ำกัน กรุณารวมปริมาณไว้ในแถวเดียว');
+    }
     ids.add(entry.ingredientId);
   }
   return entries;
@@ -514,39 +815,79 @@ function populateDetailIngredients(ingredients) {
   select.disabled = !state.catalogReady;
 }
 
+// เพิ่มวัตถุดิบลงในสูตรเดิม และจัดการการลบสูตรอาหารพร้อมยืนยันชื่อสูตร
 byId('add-ingredient-row').addEventListener('click', addIngredientRow);
 byId('retry-catalog').addEventListener('click', loadCatalog);
 byId('retry-detail-catalog').addEventListener('click', loadCatalog);
 byId('detail-ingredient').addEventListener('change', (event) => {
   const selected = state.catalog.find((item) => item.id === Number(event.target.value));
-  if (selected) byId('detail-unit').value = ({ grams: 'กรัม', ml: 'มล.', pieces: 'ชิ้น', cloves: 'กลีบ' })[selected.unit_type] || selected.unit_type;
+  if (selected) {
+    const units = { grams: 'กรัม', ml: 'มล.', pieces: 'ชิ้น', cloves: 'กลีบ' };
+    byId('detail-unit').value = units[selected.unit_type] || selected.unit_type;
+  }
 });
+
 byId('ingredient-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   if (!canManageRecipe() || state.savingIngredient) return;
   const id = state.selectedId;
   const request = state.detailRequest;
   state.savingIngredient = true;
-  const button = event.target.querySelector('button'); button.disabled = true;
+  const button = event.target.querySelector('button');
+  button.disabled = true;
   status('ingredient-status', 'กำลังเพิ่มวัตถุดิบ...');
   try {
-    await api(`/recipes/${id}/ingredients`, { method: 'POST', body: JSON.stringify({ ingredientId: Number(byId('detail-ingredient').value), quantity: Number(byId('detail-quantity').value), unit: byId('detail-unit').value.trim() }) });
+    await api(`/recipes/${id}/ingredients`, {
+      method: 'POST',
+      body: JSON.stringify({
+        ingredientId: Number(byId('detail-ingredient').value),
+        quantity: Number(byId('detail-quantity').value),
+        unit: byId('detail-unit').value.trim(),
+      }),
+    });
     if (state.selectedId === id && request === state.detailRequest) {
       event.target.reset();
       const loaded = await loadDetail(id);
-      if (state.selectedId === id && state.detailRequest === request + 1) status('ingredient-status', loaded ? 'เพิ่มวัตถุดิบแล้ว ข้อมูลด้านบนอัปเดตจาก API' : 'บันทึกแล้ว แต่โหลดผลล่าสุดไม่ได้ กรุณาเปิดสูตรอีกครั้ง', !loaded);
+      if (state.selectedId === id && state.detailRequest === request + 1) {
+        status(
+          'ingredient-status',
+          loaded
+            ? 'เพิ่มวัตถุดิบแล้ว ข้อมูลด้านบนอัปเดตจาก API'
+            : 'บันทึกแล้ว แต่โหลดผลล่าสุดไม่ได้ กรุณาเปิดสูตรอีกครั้ง',
+          !loaded
+        );
+      }
     }
-  } catch (error) { if (state.selectedId === id && state.detailRequest === request) status('ingredient-status', errorMessage(error), true); }
-  finally { state.savingIngredient = false; button.disabled = false; }
+  } catch (error) {
+    if (state.selectedId === id && state.detailRequest === request) {
+      status('ingredient-status', errorMessage(error), true);
+    }
+  } finally {
+    state.savingIngredient = false;
+    button.disabled = false;
+  }
 });
-byId('delete-open').addEventListener('click', () => { byId('delete-confirm').hidden = false; byId('delete-name').value = ''; byId('delete-name').focus(); });
-byId('delete-cancel').addEventListener('click', () => { byId('delete-confirm').hidden = true; byId('delete-open').focus(); });
+
+byId('delete-open').addEventListener('click', () => {
+  byId('delete-confirm').hidden = false;
+  byId('delete-name').value = '';
+  byId('delete-name').focus();
+});
+
+byId('delete-cancel').addEventListener('click', () => {
+  byId('delete-confirm').hidden = true;
+  byId('delete-open').focus();
+});
+
 byId('delete-recipe').addEventListener('click', async () => {
   if (!canManageRecipe() || state.deletingRecipe) return;
-  if (byId('delete-name').value.trim() !== state.currentRecipe.name) return status('delete-status', 'ชื่อสูตรไม่ตรง กรุณาตรวจอีกครั้ง หรือกดยกเลิก', true);
+  if (byId('delete-name').value.trim() !== state.currentRecipe.name) {
+    return status('delete-status', 'ชื่อสูตรไม่ตรง กรุณาตรวจอีกครั้ง หรือกดยกเลิก', true);
+  }
   const id = state.selectedId;
   const request = state.detailRequest;
-  state.deletingRecipe = true; byId('delete-recipe').disabled = true;
+  state.deletingRecipe = true;
+  byId('delete-recipe').disabled = true;
   status('delete-status', 'กำลังลบสูตร...');
   try {
     await api(`/recipes/${id}`, { method: 'DELETE' });
@@ -557,35 +898,48 @@ byId('delete-recipe').addEventListener('click', async () => {
     await loadRecipes();
     status('list-status', 'ลบสูตรและข้อมูลที่ผูกกับสูตรแล้ว');
   } catch (error) {
-    if (state.selectedId === id && state.detailRequest === request) status('delete-status', errorMessage(error), true);
-    else status('app-notice', `ลบสูตร #${id} ไม่สำเร็จ: ${errorMessage(error)}`, true);
+    if (state.selectedId === id && state.detailRequest === request) {
+      status('delete-status', errorMessage(error), true);
+    } else {
+      status('app-notice', `ลบสูตร #${id} ไม่สำเร็จ: ${errorMessage(error)}`, true);
+    }
+  } finally {
+    state.deletingRecipe = false;
+    byId('delete-recipe').disabled = false;
   }
-  finally { state.deletingRecipe = false; byId('delete-recipe').disabled = false; }
-});
-for (const button of document.querySelectorAll('[data-idea]')) button.addEventListener('click', () => {
-  byId('ingredient').value = button.dataset.idea;
-  byId('ingredient').focus();
 });
 
+for (const button of document.querySelectorAll('[data-idea]')) {
+  button.addEventListener('click', () => {
+    byId('ingredient').value = button.dataset.idea;
+    byId('ingredient').focus();
+  });
+}
+
+// เริ่มต้นการทำงานของแอป โหลดหมวดหมู่ สูตรอาหาร และคลังวัตถุดิบเมื่อเปิดหน้าเว็บ
 async function start() {
   renderSession();
   showRoute();
   try {
     const categories = await api('/categories');
     for (const id of ['category', 'category-filter']) {
-      byId(id).append(...categories.map((category) => {
-        const option = element('option', '', category.name);
-        option.value = category.id;
-        return option;
-      }));
+      byId(id).append(
+        ...categories.map((category) => {
+          const option = element('option', '', category.name);
+          option.value = category.id;
+          return option;
+        })
+      );
     }
-    byId('category-chips').append(...categories.map((category) => {
-      const chip = element('button', 'chip', category.name);
-      chip.type = 'button';
-      chip.dataset.category = String(category.id);
-      chip.setAttribute('aria-pressed', 'false');
-      return chip;
-    }));
+    byId('category-chips').append(
+      ...categories.map((category) => {
+        const chip = element('button', 'chip', category.name);
+        chip.type = 'button';
+        chip.dataset.category = String(category.id);
+        chip.setAttribute('aria-pressed', 'false');
+        return chip;
+      })
+    );
   } catch (error) {
     status('create-status', `โหลดหมวดหมู่ไม่สำเร็จ ${errorMessage(error)} รีเฟรชหน้าเพื่อลองใหม่`, true);
   }
